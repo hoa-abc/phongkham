@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Tầng nghiệp vụ: quy tắc, phân quyền, transaction. Tham chiếu DataAccess + Common. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClinicManagementSystem.Common\ClinicManagementSystem.Common.csproj" />
+    <ProjectReference Include="..\ClinicManagementSystem.DataAccess\ClinicManagementSystem.DataAccess.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Cho phép project test gọi các lớp internal (ví dụ SlotCalculator). -->
+    <InternalsVisibleTo Include="ClinicManagementSystem.Tests" />
+  </ItemGroup>
+
+</Project>

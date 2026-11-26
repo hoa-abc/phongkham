@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tầng ViewModel của app desktop (chữ "VM" trong MVVM).
+    CỐ Ý là thư viện .NET thường (net10.0), KHÔNG dùng WPF: ViewModel không được biết gì về nút bấm,
+    cửa sổ hay MessageBox. Nhờ vậy ViewModel chạy và kiểm thử được trên mọi máy, kể cả Mac.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Thư viện MVVM của Microsoft: [ObservableProperty], [RelayCommand], ObservableValidator... -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClinicManagementSystem.Common\ClinicManagementSystem.Common.csproj" />
+    <ProjectReference Include="..\ClinicManagementSystem.Services\ClinicManagementSystem.Services.csproj" />
+  </ItemGroup>
+
+</Project>

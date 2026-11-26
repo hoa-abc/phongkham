@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bài giảng MVVM Desktop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Bố cục: mục lục cố định bên trái (máy tính) / ngăn kéo (điện thoại); nội dung một cột ~72 ký tự.
+   Mỗi phần A/B/C mang một màu riêng (--part) để biết mình đang học phần nào. */
+:root {
+  --bg: #F7FAFA; --surface: #FFFFFF; --ink: #15302E; --ink-2: #44605D; --muted: #6A817E;
+  --line: #D5E2E0; --code-bg: #EDF3F2; --focus: #0E7C72;
+  --c: #0E7C72; --c-soft: #DCF0EC;
+  --a: #34589E; --a-soft: #E3EAF7;
+  --b: #9C5410; --b-soft: #F6E9D7;
+  --d: #8A3B5C; --d-soft: #F5E3EA;
+  --r: #2D6A39; --r-soft: #E1EFE3;
+  --warn: #93460A; --warn-bg: #FCEFDF;
+  --hl-kw: #8A3B5C; --hl-str: #2D6A39; --hl-com: #6A817E; --hl-type: #34589E; --hl-num: #9C5410;
+  --font-display: "Be Vietnam Pro", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 10px;
+  /* Chủ ý chỉ dùng giao diện SÁNG như trang sách: dễ đọc lâu, kể cả khi máy để chế độ tối. */
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.7 var(--font-body); }
+a { color: var(--part, var(--c)); text-underline-offset: 3px; overflow-wrap: anywhere; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+code { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+strong { font-weight: 600; color: var(--ink); }
+
+.part--intro { --part: var(--c); --part-soft: var(--c-soft); }
+.part--c { --part: var(--c); --part-soft: var(--c-soft); }
+.part--a { --part: var(--a); --part-soft: var(--a-soft); }
+.part--b { --part: var(--b); --part-soft: var(--b-soft); }
+.part--d { --part: var(--d); --part-soft: var(--d-soft); }
+.part--r { --part: var(--r); --part-soft: var(--r-soft); }
+
+/* ---------- Khung trang ---------- */
+.layout { display: grid; grid-template-columns: 1fr; }
+@media (min-width: 1000px) { .layout { grid-template-columns: 300px minmax(0, 1fr); } }
+
+.sidebar {
+  background: var(--surface); border-right: 1px solid var(--line);
+  position: fixed; inset: 0 auto 0 0; width: min(320px, 88vw); z-index: 30;
+  transform: translateX(-102%); transition: transform .2s ease;
+  display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.sidebar.is-open { transform: none; box-shadow: 0 0 0 100vmax rgba(0,0,0,.35); }
+@media (min-width: 1000px) {
+  .sidebar { position: sticky; top: 0; height: 100vh; width: auto; transform: none; box-shadow: none; }
+}
+.sidebar__top { padding: 20px 20px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.sidebar__name { font: 700 15px/1.3 var(--font-display); }
+.progress { display: grid; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.progress__bar { height: 6px; border-radius: 99px; background: var(--code-bg); overflow: hidden; }
+.progress__fill { height: 100%; width: 0; background: var(--c); border-radius: 99px; transition: width .3s; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: 500 13px/1 var(--font-body); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.sidebar__nav { overflow-y: auto; padding: 10px 10px 30px; flex: 1; }
+
+.toc, .toc ol { list-style: none; margin: 0; padding: 0; }
+.toc__part { margin-top: 12px; }
+.toc__part > a { display: block; padding: 6px 10px; font: 600 12px/1.3 var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: var(--tp); text-decoration: none; }
+.toc__part--intro { --tp: var(--muted); } .toc__part--c { --tp: var(--c); } .toc__part--a { --tp: var(--a); }
+.toc__part--b { --tp: var(--b); } .toc__part--d { --tp: var(--d); } .toc__part--r { --tp: var(--r); }
+.toc ol a {
+  display: flex; gap: 8px; align-items: baseline; padding: 5px 10px 5px 12px; border-radius: 6px;
+  font-size: 13.5px; line-height: 1.4; color: var(--ink-2); text-decoration: none; border-left: 2px solid transparent;
+}
+.toc ol a:hover { background: var(--bg); color: var(--ink); }
+.toc ol a.is-current { border-left-color: var(--tp); color: var(--ink); background: var(--bg); font-weight: 500; }
+.toc ol a::after { content: ""; margin-left: auto; flex: none; }
+.toc ol a.is-done::after { content: "✓"; color: var(--tp); font-weight: 700; }
+
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  display: flex; align-items: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--line);
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 25; background: var(--surface); }
+.topbar__progress { font-size: 13px; color: var(--ink-2); margin-left: auto; }
+@media (min-width: 1000px) { .topbar { display: none; } }
+
+.main { min-width: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 80px; }
+.content { max-width: 780px; margin: 0 auto; }
+
+/* ---------- Đầu trang ---------- */
+.hero { padding-block: 44px 28px; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.eyebrow { font: 600 12px/1.4 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--c); margin: 0; }
+.hero h1 { font: 700 clamp(28px, 5vw, 40px)/1.15 var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.hero__sub { margin: 0; color: var(--ink-2); font-size: 17px; }
+.howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 8px; }
+.howto div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.howto b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 10px; border-radius: 99px; background: var(--chip-soft); color: var(--chip); font-weight: 500; }
+.chip--c { --chip: var(--c); --chip-soft: var(--c-soft); } .chip--a { --chip: var(--a); --chip-soft: var(--a-soft); }
+.chip--b { --chip: var(--b); --chip-soft: var(--b-soft); } .chip--d { --chip: var(--d); --chip-soft: var(--d-soft); }
+.chip--r { --chip: var(--r); --chip-soft: var(--r-soft); }
+
+/* ---------- Lộ trình học ---------- */
+.start { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; margin-top: 6px; grid-template-columns: minmax(0, 1fr); }
+.start__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.start__head h2 { font: 700 19px/1.3 var(--font-display); margin: 0; flex: 1 1 12em; min-width: 0; }
+.btn--go { background: var(--c); border-color: var(--c); color: #FFFFFF; font-weight: 600; padding: 10px 16px; }
+.btn--go:hover { filter: brightness(1.08); border-color: var(--c); }
+.roadmap { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.roadmap li { margin: 0; }
+.step { display: flex; gap: 14px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); text-decoration: none; color: var(--ink); background: var(--bg); }
+.step:hover { border-color: var(--c); background: var(--c-soft); }
+.step__no { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--c); color: #FFFFFF; display: grid; place-items: center; font: 700 14px/1 var(--font-display); }
+.step__body { display: grid; gap: 2px; min-width: 0; }
+.step__top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.step__top b { font: 600 15.5px/1.4 var(--font-display); }
+.step__time { font-size: 12.5px; color: var(--c); background: var(--c-soft); padding: 1px 8px; border-radius: 99px; font-weight: 500; }
+.step__text { font-size: 14.5px; line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; }
+.tips { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+
+/* ---------- Phần ---------- */
+.part { padding-top: 8px; }
+.part + .part { margin-top: 40px; }
+.part__head {
+  display: flex; gap: 16px; align-items: center; padding: 20px; border-radius: 14px;
+  background: var(--part-soft); margin-bottom: 8px;
+}
+.part__letter {
+  flex: none; width: 56px; height: 56px; border-radius: 12px; background: var(--part); color: var(--surface);
+  display: grid; place-items: center; font: 700 28px/1 var(--font-display);
+}
+.part__head h1 { margin: 2px 0 0; font: 700 clamp(19px, 3.4vw, 24px)/1.25 var(--font-display); text-wrap: balance; }
+.part__note { margin: 0; font: 600 12px/1.3 var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--part); }
+.part__body > hr { display: none; }
+
+.h2-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 44px; padding-top: 18px; border-top: 2px solid var(--part); }
+h2 { font: 700 22px/1.3 var(--font-display); margin: 0; text-wrap: balance; flex: 1 1 320px; min-width: 0; }
+h3 { font: 600 18px/1.35 var(--font-display); margin: 30px 0 8px; color: var(--ink); text-wrap: balance; }
+.done {
+  flex: none; font: 500 13px/1 var(--font-body); padding: 8px 12px; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
+}
+.done[aria-pressed="true"] { background: var(--part); border-color: var(--part); color: var(--surface); }
+
+p, ul, ol { margin: 12px 0; }
+ul, ol { padding-left: 1.4em; }
+li { margin: 4px 0; }
+li > p { margin: 4px 0; }
+
+.files { font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.files__label { font: 600 11px/1.6 var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--part); margin-right: 4px; }
+.path { font-family: var(--font-mono); font-size: .84em; color: var(--part); background: var(--part-soft); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+.path code { background: none; padding: 0; font-size: 1em; }
+a.path--open { text-decoration: none; border: 1px solid transparent; }
+a.path--open::after { content: " ↗"; font-family: var(--font-body); font-weight: 600; }
+a.path--open:hover { border-color: var(--part); }
+
+/* Bảng */
+.scroll { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.5; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 13px/1.4 var(--font-display); background: var(--part-soft); color: var(--ink); }
+tbody tr:last-child td { border-bottom: 0; }
+
+/* Code */
+.code { margin: 16px 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--code-bg); }
+.code figcaption { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 12px; font: 600 11px/1.6 var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; }
+.code code, .diagram { font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: none; padding: 0; color: var(--ink); white-space: pre; overflow-wrap: normal; }
+.copy { font: 500 12px/1 var(--font-body); text-transform: none; letter-spacing: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 6px; padding: 5px 8px; cursor: pointer; }
+.diagram { margin: 0; padding: 16px; background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); width: max-content; min-width: 100%; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal { color: var(--hl-kw); }
+.hljs-string, .hljs-attr-value, .hljs-template-variable { color: var(--hl-str); }
+.hljs-comment, .hljs-quote { color: var(--hl-com); font-style: italic; }
+.hljs-title, .hljs-type, .hljs-built_in, .hljs-class, .hljs-name, .hljs-selector-class { color: var(--hl-type); }
+.hljs-number, .hljs-attr, .hljs-attribute, .hljs-meta, .hljs-variable { color: var(--hl-num); }
+
+/* Ô ghi chú, cảnh báo */
+.callout { margin: 18px 0; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); font-size: 15px; }
+.callout > p:first-of-type { margin-top: 6px; }
+.callout > p:last-child { margin-bottom: 0; }
+.callout--warn { background: var(--warn-bg); border-color: transparent; }
+.callout--key { background: var(--part-soft); border-color: transparent; }
+.tag { display: inline-block; font: 600 11px/1.6 var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--surface); background: var(--part); padding: 1px 8px; border-radius: 5px; }
+.tag--soft { background: var(--part-soft); color: var(--part); }
+.tag--warn { background: var(--warn); }
+.speech { margin: 16px 0; padding: 18px 20px; border-radius: var(--radius); background: var(--part-soft); font-size: 16.5px; line-height: 1.75; }
+.speech p:first-child { margin-top: 0; } .speech p:last-child { margin-bottom: 0; }
+
+/* Câu hỏi tự ôn */
+.qa { margin: 16px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.qa summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 16px; }
+.qa summary::-webkit-details-marker { display: none; }
+.qa summary::after { content: "Xem ý trả lời"; margin-left: auto; flex: none; font-size: 12.5px; color: var(--part); font-weight: 500; white-space: nowrap; }
+.qa[open] summary::after { content: "Ẩn"; }
+.qa__q { font-weight: 600; min-width: 0; }
+.qa__a { padding: 0 16px 14px; border-top: 1px dashed var(--line); padding-top: 12px; font-size: 15px; }
+.qa__a > p:first-of-type { display: inline; }
+.qa--inline { margin: 6px 0; }
+.qa--inline summary { padding: 9px 12px; }
+.qa--inline .qa__q { font-weight: 500; font-style: italic; }
+@media (max-width: 520px) { .qa summary { flex-wrap: wrap; } .qa summary::after { margin-left: 0; } }
+
+/* Danh sách tự kiểm tra */
+li.check { list-style: none; margin-left: -1.4em; display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+li.check input { margin-top: 6px; width: 17px; height: 17px; accent-color: var(--part); flex: none; }
+li.check input:checked + label { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+input[type="checkbox"][disabled] { accent-color: var(--part); }
+
+.foot { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar" aria-label="Mục lục">
+    <div class="sidebar__top">
+      <div class="sidebar__name">Bài giảng MVVM Desktop</div>
+      <div class="progress">
+        <span><b id="doneCount">0</b> / 26 mục đã học</span>
+        <div class="progress__bar"><div class="progress__fill" id="progressFill"></div></div>
+      </div>
+      <div class="tools">
+        <button type="button" class="btn btn--go" data-continue>Học tiếp →</button>
+        <button type="button" class="btn" id="openAll">Mở hết đáp án</button>
+        <button type="button" class="btn" id="closeAll">Ẩn hết đáp án</button>
+      </div>
+    </div>
+    <nav class="sidebar__nav"><ol class="toc"><li class="toc__part toc__part--intro"><a href="#top">Bắt đầu</a><ol><li><a href="#0-doc-truoc-app-desktop-nay-la-gi-chay-o-dau" data-toc="0-doc-truoc-app-desktop-nay-la-gi-chay-o-dau">0. Đọc trước: app desktop này là gì, chạy ở đâu</a></li><li><a href="#1-mvvm-tu-so-0" data-toc="1-mvvm-tu-so-0">1. MVVM từ số 0</a></li></ol></li><li class="toc__part toc__part--c"><a href="#phan-c-luong-tiep-tan-bang-mvvm">C · UX và luồng tiếp tân</a><ol><li><a href="#c1-ban-do-file-cua-phan-c" data-toc="c1-ban-do-file-cua-phan-c">C1. Bản đồ file của phần C</a></li><li><a href="#c2-bookingviewmodel-doc-tung-khoi" data-toc="c2-bookingviewmodel-doc-tung-khoi">C2. BookingViewModel: đọc từng khối</a></li><li><a href="#c3-bookingview-xaml-doc-binding-tung-cho" data-toc="c3-bookingview-xaml-doc-binding-tung-cho">C3. BookingView.xaml: đọc binding từng chỗ</a></li><li><a href="#c4-ba-loai-lop-du-lieu-o-ban-desktop" data-toc="c4-ba-loai-lop-du-lieu-o-ban-desktop">C4. Ba loại lớp dữ liệu ở bản desktop</a></li><li><a href="#c5-danh-sach-lich-lenh-nam-trong-tung-dong" data-toc="c5-danh-sach-lich-lenh-nam-trong-tung-dong">C5. Danh sách lịch: lệnh nằm trong từng dòng</a></li><li><a href="#c6-check-in-kiem-tra-du-lieu-ngay-khi-go" data-toc="c6-check-in-kiem-tra-du-lieu-ngay-khi-go">C6. Check-in: kiểm tra dữ liệu ngay khi gõ</a></li><li><a href="#c7-ho-so-benh-nhi-tao-xong-chuyen-thang-sang-dat-lich" data-toc="c7-ho-so-benh-nhi-tao-xong-chuyen-thang-sang-dat-lich">C7. Hồ sơ bệnh nhi: tạo xong chuyển thẳng sang đặt lịch</a></li><li><a href="#c8-trang-thai-ban-va-thong-bao-viet-mot-lan-dung-moi-trang" data-toc="c8-trang-thai-ban-va-thong-bao-viet-mot-lan-dung-moi-trang">C8. Trạng thái bận và thông báo: viết một lần, dùng mọi trang</a></li><li><a href="#c9-test-viewmodel-loi-ich-lon-nhat-cua-mvvm" data-toc="c9-test-viewmodel-loi-ich-lon-nhat-cua-mvvm">C9. Test ViewModel: lợi ích lớn nhất của MVVM</a></li><li><a href="#c10-so-sanh-phan-c-web-va-desktop" data-toc="c10-so-sanh-phan-c-web-va-desktop">C10. So sánh phần C: web và desktop</a></li><li><a href="#c11-tu-kiem-tra-phan-c" data-toc="c11-tu-kiem-tra-phan-c">C11. Tự kiểm tra phần C</a></li></ol></li><li class="toc__part toc__part--a"><a href="#phan-a-nen-tang-va-tich-hop">A · Nền tảng và tích hợp</a><ol><li><a href="#a1-vi-sao-tach-viewmodel-thanh-project-rieng" data-toc="a1-vi-sao-tach-viewmodel-thanh-project-rieng">A1. Vì sao tách ViewModel thành project riêng</a></li><li><a href="#a2-app-xaml-cs-composition-root-cua-ban-desktop" data-toc="a2-app-xaml-cs-composition-root-cua-ban-desktop">A2. App.xaml.cs: composition root của bản desktop</a></li><li><a href="#a3-vong-doi-di-trong-app-desktop" data-toc="a3-vong-doi-di-trong-app-desktop">A3. Vòng đời DI trong app desktop</a></li><li><a href="#a4-iservicerunner-moi-thao-tac-mot-dbcontext" data-toc="a4-iservicerunner-moi-thao-tac-mot-dbcontext">A4. IServiceRunner: mỗi thao tác một DbContext ⭐</a></li><li><a href="#a5-cua-so-chinh-va-dieu-huong" data-toc="a5-cua-so-chinh-va-dieu-huong">A5. Cửa sổ chính và điều hướng</a></li><li><a href="#a6-dang-nhap-va-phien-lam-viec" data-toc="a6-dang-nhap-va-phien-lam-viec">A6. Đăng nhập và phiên làm việc</a></li><li><a href="#a7-dich-vu-giao-dien-style-converter" data-toc="a7-dich-vu-giao-dien-style-converter">A7. Dịch vụ giao diện, style, converter</a></li><li><a href="#a8-cau-hinh-va-chay-tren-windows" data-toc="a8-cau-hinh-va-chay-tren-windows">A8. Cấu hình và chạy trên Windows</a></li></ol></li><li class="toc__part toc__part--b"><a href="#phan-b-du-lieu-va-nghiep-vu-nen">B · Dữ liệu và nghiệp vụ nền</a><ol><li><a href="#b1-khong-sua-mot-dong-nao-o-tang-du-lieu" data-toc="b1-khong-sua-mot-dong-nao-o-tang-du-lieu">B1. Không sửa một dòng nào ở tầng dữ liệu</a></li><li><a href="#b2-vong-doi-dbcontext-web-va-desktop" data-toc="b2-vong-doi-dbcontext-web-va-desktop">B2. Vòng đời DbContext: web và desktop</a></li><li><a href="#b3-hai-giao-dien-mot-database-chong-trung-van-dung" data-toc="b3-hai-giao-dien-mot-database-chong-trung-van-dung">B3. Hai giao diện, một database: chống trùng vẫn đúng</a></li><li><a href="#b4-dto-la-hop-dong-giua-b-va-c-o-ca-hai-ban" data-toc="b4-dto-la-hop-dong-giua-b-va-c-o-ca-hai-ban">B4. DTO là hợp đồng giữa B và C, ở cả hai bản</a></li></ol></li><li class="toc__part toc__part--d"><a href="#phan-d-ghep-a-b-c-theo-dau-nut-xac-nhan-lich-trong-app-deskt">Ghép A + B + C</a><ol><li><a href="#d2-bang-chung-21-test-chay-tren-mac" data-toc="d2-bang-chung-21-test-chay-tren-mac">D2. Bằng chứng: 21 test, chạy trên Mac</a></li></ol></li><li class="toc__part toc__part--d"><a href="#phan-e-cau-hoi-van-dap-mvvm">Câu hỏi vấn đáp bổ sung</a><ol></ol></li></ol></nav>
+  </aside>
+
+  <div class="main-wrap" style="min-width:0">
+    <div class="topbar">
+      <button type="button" class="btn" id="tocToggle" aria-controls="sidebar" aria-expanded="false">☰ Mục lục</button>
+      <span class="topbar__progress"><b id="doneCountTop">0</b> / 26 mục đã học</span>
+    </div>
+    <main class="main">
+      <div class="content">
+        <header class="hero" id="top">
+          <p class="eyebrow">Đồ án Phòng khám Nhi · WPF · MVVM</p>
+          <h1>Bài giảng app desktop MVVM — A · B · C</h1>
+          <p class="hero__sub">Cùng hệ thống phòng khám, giờ là app desktop WPF theo MVVM. Học phần C thật kỹ, A và B đủ để vấn đáp.</p>
+          <div class="legend">
+            <span class="chip chip--c">C · UX và luồng tiếp tân</span>
+            <span class="chip chip--a">A · Nền tảng</span>
+            <span class="chip chip--b">B · Dữ liệu</span>
+            <span class="chip chip--d">Ghép và ôn tập</span>
+          </div>
+          <section class="start" aria-labelledby="startTitle">
+            <div class="start__head">
+              <h2 id="startTitle">Bắt đầu từ đây: 5 bước</h2>
+              <button type="button" class="btn btn--go" data-continue>Học tiếp →</button>
+            </div>
+            <ol class="roadmap"><li><a class="step" href="#0-doc-truoc-app-desktop-nay-la-gi-chay-o-dau"><span class="step__no">1</span><span class="step__body"><span class="step__top"><b>Nền tảng MVVM</b><span class="step__time">40 phút</span></span><span class="step__text">Mục 0 và 1: bức tranh 5 tầng, binding, command, ObservableCollection, DataTemplate.</span></span></a></li><li><a class="step" href="#c1-ban-do-file-cua-phan-c"><span class="step__no">2</span><span class="step__body"><span class="step__top"><b>Phần C: C1 → C5</b><span class="step__time">60 phút</span></span><span class="step__text">Đặt lịch, lưới khung giờ, danh sách lịch, lệnh trong từng dòng.</span></span></a></li><li><a class="step" href="#c6-check-in-kiem-tra-du-lieu-ngay-khi-go"><span class="step__no">3</span><span class="step__body"><span class="step__top"><b>Phần C: C6 → C11</b><span class="step__time">60 phút</span></span><span class="step__text">Check-in có kiểm tra dữ liệu, tạo hồ sơ, test ViewModel, tự kiểm tra.</span></span></a></li><li><a class="step" href="#a1-vi-sao-tach-viewmodel-thanh-project-rieng"><span class="step__no">4</span><span class="step__body"><span class="step__top"><b>Phần A: khung ứng dụng</b><span class="step__time">45 phút</span></span><span class="step__text">App.xaml.cs, DI, IServiceRunner, điều hướng, đăng nhập.</span></span></a></li><li><a class="step" href="#b1-khong-sua-mot-dong-nao-o-tang-du-lieu"><span class="step__no">5</span><span class="step__body"><span class="step__top"><b>B, ghép và ôn vấn đáp</b><span class="step__time">45 phút</span></span><span class="step__text">Dùng lại tầng dữ liệu, theo dấu một cú bấm, câu hỏi MVVM.</span></span></a></li></ol>
+            <p class="tips">Học xong mục nào thì bấm <b>"Đánh dấu đã học"</b> ở đầu mục đó. Nút <b>"Học tiếp"</b> luôn đưa bạn tới mục đầu tiên chưa học.
+              Câu <b>"Thầy hỏi"</b> đang ẩn đáp án: nói câu trả lời thành tiếng trước, rồi mới bấm xem.
+              Tên file có mũi tên như <span class="path">Program.cs ↗</span> bấm vào là mở đúng file (và đúng dòng) trong VS Code, khi bạn mở trang này từ file trên máy.
+              Lần đầu trình duyệt sẽ hỏi có cho mở Visual Studio Code không: chọn Cho phép.</p>
+          </section>
+        </header>
+        <section class="part part--intro"><div class="part__body"><aside class="callout"><p>Tài liệu này đi kèm app desktop vừa dựng trong dự án (thư mục <code>src/ClinicManagementSystem.Desktop*</code>). Cấu trúc giống hệt bài giảng bản web: <strong>Phần C (của bạn) giảng sâu nhất</strong>, A và B đủ để vấn đáp. Khi đã hiểu bản web, bạn sẽ thấy app desktop <strong>dùng lại nguyên</strong> tầng nghiệp vụ và dữ liệu, chỉ thay tầng giao diện. Đó chính là điều thầy muốn bạn hiểu về kiến trúc phân tầng.</p></aside>
+<hr>
+<div class="h2-row"><h2 id="0-doc-truoc-app-desktop-nay-la-gi-chay-o-dau">0. Đọc trước: app desktop này là gì, chạy ở đâu</h2><button type="button" class="done" data-done="0-doc-truoc-app-desktop-nay-la-gi-chay-o-dau" aria-pressed="false">Đánh dấu đã học</button></div>
+<h3 id="0-1-vi-sao-co-them-ban-desktop">0.1. Vì sao có thêm bản desktop</h3>
+<p>Tài liệu gốc của môn (<code>Demo_UI_UX/README.md</code>) yêu cầu: <strong>C# WPF</strong> + <strong>MVVM 5 tầng</strong> + <strong>CommunityToolkit.Mvvm</strong> + <strong>EF Core + SQL Server</strong>. Bản web dùng MVC; bản desktop này làm <strong>đúng yêu cầu MVVM</strong> đó, trên <strong>cùng một database và cùng tầng Services</strong> với bản web.</p>
+<div class="scroll"><table><thead><tr>
+<th>Điều cần biết</th>
+<th>Chi tiết</th>
+</tr>
+</thead><tbody><tr>
+<td>Công nghệ</td>
+<td>.NET 10, WPF, CommunityToolkit.Mvvm 8.4, Microsoft.Extensions.DependencyInjection</td>
+</tr>
+<tr>
+<td>Chạy ở đâu</td>
+<td><strong>Chỉ Windows</strong> (WPF là công nghệ của Windows). Máy Mac <strong>build</strong> và <strong>chạy test</strong> được, nhưng không mở được cửa sổ</td>
+</tr>
+<tr>
+<td>Đã kiểm chứng gì</td>
+<td>Build không lỗi; 21 test chạy trên Mac, gồm toàn luồng đặt lịch → check-in → khám → thu tiền → cấp thuốc qua ViewModel với SQL Server thật</td>
+</tr>
+<tr>
+<td>Chưa kiểm chứng</td>
+<td><strong>Giao diện chưa được mở thử trên Windows.</strong> Bố cục, khoảng cách, cỡ chữ có thể cần chỉnh nhẹ khi chạy lần đầu</td>
+</tr>
+<tr>
+<td>Phạm vi</td>
+<td>Đủ 4 vai trò. Phần C (tiếp tân) làm kỹ nhất; admin chỉ xem danh sách tài khoản</td>
+</tr>
+</tbody></table></div>
+<h3 id="0-2-nam-tang-cua-mvvm-trong-du-an">0.2. Năm tầng của MVVM trong dự án</h3>
+<div class="scroll"><pre class="diagram">┌────────────────────────────────────────────────────────────────────────────┐
+│ 1. VIEW          src/ClinicManagementSystem.Desktop          (WPF, XAML)   │
+│    BookingView.xaml, MainWindow.xaml ...   chỉ chạy trên Windows           │
+└───────────────▲────────────────────────────────────────────────────────────┘
+                │ data binding + command (View không gọi Service)
+┌───────────────┴────────────────────────────────────────────────────────────┐
+│ 2. VIEWMODEL     src/ClinicManagementSystem.Desktop.ViewModels  (C# thuần) │
+│    BookingViewModel, ShellViewModel ...    chạy &amp; test được trên Mac       │
+└───────────────┬────────────────────────────────────────────────────────────┘
+                │ gọi interface qua IServiceRunner
+┌───────────────▼────────────────────────────────────────────────────────────┐
+│ 3. SERVICE       src/ClinicManagementSystem.Services     (DÙNG LẠI từ web) │
+├────────────────────────────────────────────────────────────────────────────┤
+│ 4. DATA ACCESS   src/ClinicManagementSystem.DataAccess   (DÙNG LẠI từ web) │
+├────────────────────────────────────────────────────────────────────────────┤
+│ 5. SQL SERVER    Docker, cổng 14333, database ClinicWeb  (DÙNG CHUNG web)  │
+└────────────────────────────────────────────────────────────────────────────┘
+        Common (DTO, enum, ServiceResult, ClinicClock): mọi tầng dùng chung</pre></div>
+<p>Quy tắc vàng: <strong>mũi tên chỉ đi xuống</strong>. View biết ViewModel (qua binding), ViewModel biết Service (qua interface), không tầng nào biết tầng trên.</p>
+<h3 id="0-3-anh-xa-bang-phan-cong-sang-app-desktop">0.3. Ánh xạ bảng phân công sang app desktop</h3>
+<div class="scroll"><table><thead><tr>
+<th>Thành viên</th>
+<th>Bản web</th>
+<th>Bản desktop MVVM</th>
+</tr>
+</thead><tbody><tr>
+<td><strong>A</strong> – nền tảng</td>
+<td><code>Program.cs</code>, project Web, DI, README</td>
+<td><code>App.xaml.cs</code>, <code>MainWindow</code>, <code>ShellViewModel</code>, <code>Navigator</code>, <code>IServiceRunner</code>, đăng nhập, <code>Themes/</code></td>
+</tr>
+<tr>
+<td><strong>B</strong> – dữ liệu</td>
+<td>Entity, <code>ClinicDbContext</code>, Fluent API, migration, seed</td>
+<td><strong>Không đổi gì.</strong> Dùng lại nguyên, cùng database</td>
+</tr>
+<tr>
+<td><strong>C</strong> – tiếp tân</td>
+<td><code>Views/Reception</code>, ViewModel web, CSS</td>
+<td><code>ViewModels/Reception/*</code> + <code>Views/Reception/*.xaml</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="0-4-danh-sach-project-sau-khi-them-ban-desktop">0.4. Danh sách project sau khi thêm bản desktop</h3>
+<div class="scroll"><table><thead><tr>
+<th>Project</th>
+<th>Loại</th>
+<th>Mới hay dùng lại</th>
+</tr>
+</thead><tbody><tr>
+<td><code>ClinicManagementSystem.Common</code></td>
+<td>thư viện</td>
+<td>dùng lại</td>
+</tr>
+<tr>
+<td><code>ClinicManagementSystem.DataAccess</code></td>
+<td>thư viện</td>
+<td>dùng lại</td>
+</tr>
+<tr>
+<td><code>ClinicManagementSystem.Services</code></td>
+<td>thư viện</td>
+<td>dùng lại</td>
+</tr>
+<tr>
+<td><code>ClinicManagementSystem.Web</code></td>
+<td>ASP.NET Core MVC</td>
+<td>bản web, giữ nguyên</td>
+</tr>
+<tr>
+<td><code>ClinicManagementSystem.Desktop.ViewModels</code></td>
+<td>thư viện <code>net10.0</code></td>
+<td><strong>mới</strong> – tầng ViewModel</td>
+</tr>
+<tr>
+<td><code>ClinicManagementSystem.Desktop</code></td>
+<td>WPF <code>net10.0-windows</code></td>
+<td><strong>mới</strong> – tầng View</td>
+</tr>
+<tr>
+<td><code>ClinicManagementSystem.Desktop.Tests</code></td>
+<td>xUnit</td>
+<td><strong>mới</strong> – 21 test</td>
+</tr>
+</tbody></table></div>
+<hr>
+<div class="h2-row"><h2 id="1-mvvm-tu-so-0">1. MVVM từ số 0</h2><button type="button" class="done" data-done="1-mvvm-tu-so-0" aria-pressed="false">Đánh dấu đã học</button></div>
+<h3 id="1-1-ba-chu-cai">1.1. Ba chữ cái</h3>
+<ul>
+<li><strong>Model</strong>: dữ liệu và nghiệp vụ. Ở đây là <strong>DTO</strong> trong <code>Common</code> cùng các <strong>Service</strong> (<code>IAppointmentService</code>...). ViewModel không tự viết SQL.</li>
+<li><strong>View</strong>: thứ người dùng nhìn thấy, viết bằng <strong>XAML</strong> (giống HTML nhưng cho WPF). View <strong>không chứa logic</strong>.</li>
+<li><strong>ViewModel</strong>: &quot;bộ não&quot; của một màn hình. Nó giữ <strong>trạng thái</strong> (bé nào đang chọn, khung giờ nào, đang tải hay không) và <strong>hành động</strong> (Command). Nó <strong>không biết</strong> View trông ra sao.</li>
+</ul>
+<p>Hai thứ nối View với ViewModel: <strong>data binding</strong> (nối dữ liệu) và <strong>command</strong> (nối hành động).</p>
+<h3 id="1-2-data-binding-day-noi-du-lieu">1.2. Data binding: &quot;dây nối&quot; dữ liệu</h3>
+<p>Trong XAML:</p>
+<figure class="code"><figcaption><span>XAML</span></figcaption><pre><code class="language-xml">&lt;TextBox Text=&quot;{Binding PatientKeyword, UpdateSourceTrigger=PropertyChanged}&quot; /&gt;</code></pre></figure>
+<p>Nghĩa là: ô nhập này <strong>nối hai chiều</strong> với thuộc tính <code>PatientKeyword</code> của ViewModel. Người dùng gõ → ViewModel đổi; ViewModel đổi → ô nhập đổi.</p>
+<p>Muốn chiều &quot;ViewModel đổi → màn hình đổi&quot; hoạt động, ViewModel phải <strong>báo</strong> mỗi khi thuộc tính đổi, qua interface <code>INotifyPropertyChanged</code>. Viết tay sẽ rất dài:</p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">private string? patientKeyword;
+public string? PatientKeyword
+{
+    get =&gt; patientKeyword;
+    set
+    {
+        if (patientKeyword == value) return;
+        patientKeyword = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PatientKeyword)));  // &quot;báo&quot; cho WPF
+    }
+}</code></pre></figure>
+<p><strong>CommunityToolkit.Mvvm</strong> viết hộ toàn bộ đoạn trên. Bạn chỉ cần:</p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">[ObservableProperty]
+private string? patientKeyword;   // bộ sinh mã tự tạo thuộc tính PatientKeyword có báo thay đổi</code></pre></figure>
+<p>Lớp phải là <code>partial</code> để bộ sinh mã (source generator) viết thêm phần còn lại vào một file ẩn lúc biên dịch.</p>
+<h3 id="1-3-command-day-noi-hanh-dong">1.3. Command: &quot;dây nối&quot; hành động</h3>
+<p>Nút bấm không gọi hàm trực tiếp. Nó gọi một <strong>Command</strong> của ViewModel:</p>
+<figure class="code"><figcaption><span>XAML</span></figcaption><pre><code class="language-xml">&lt;Button Content=&quot;Xác nhận lịch&quot; Command=&quot;{Binding ConfirmCommand}&quot; /&gt;</code></pre></figure>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">[RelayCommand(CanExecute = nameof(CanConfirm))]
+private Task ConfirmAsync() { ... }          // bộ sinh mã tạo thuộc tính ConfirmCommand
+
+private bool CanConfirm() =&gt; SelectedPatient is not null &amp;&amp; SelectedSlot is { IsAvailable: true };</code></pre></figure>
+<ul>
+<li>Hàm tên <code>ConfirmAsync</code> → lệnh tên <code>ConfirmCommand</code> (bỏ chữ Async, thêm Command).</li>
+<li><strong><code>CanExecute</code></strong>: khi trả <code>false</code>, WPF <strong>tự làm mờ nút</strong>. Không cần viết <code>button.IsEnabled = false</code> ở đâu cả.</li>
+<li>Lệnh async còn tự chặn bấm hai lần trong lúc đang chạy.</li>
+</ul>
+<h3 id="1-4-observablecollection-danh-sach-tu-cap-nhat">1.4. ObservableCollection: danh sách tự cập nhật</h3>
+<p><code>List&lt;T&gt;</code> thường không báo khi thêm hoặc xóa phần tử. <code>ObservableCollection&lt;T&gt;</code> thì có: <code>Slots.Add(...)</code> là lưới giờ trên màn hình tự hiện thêm ô; <code>Lines.Remove(line)</code> là bảng thuốc tự mất một dòng.</p>
+<h3 id="1-5-datacontext-va-datatemplate">1.5. DataContext và DataTemplate</h3>
+<ul>
+<li><strong>DataContext</strong> = &quot;ViewModel mà View này đang hiển thị&quot;. Mọi <code>{Binding X}</code> tìm <code>X</code> trong DataContext.</li>
+<li><strong>DataTemplate</strong> = &quot;dữ liệu kiểu này thì vẽ như thế này&quot;. Ví dụ ở <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Themes/ViewMappings.xaml" title="Mở src/ClinicManagementSystem.Desktop/Themes/ViewMappings.xaml trong VS Code">ViewMappings.xaml</a>:</li>
+</ul>
+<figure class="code"><figcaption><span>XAML</span></figcaption><pre><code class="language-xml">&lt;DataTemplate DataType=&quot;{x:Type rec:BookingViewModel}&quot;&gt;&lt;vrec:BookingView /&gt;&lt;/DataTemplate&gt;</code></pre></figure>
+<p>Khi vùng nội dung nhận một <code>BookingViewModel</code>, WPF tự vẽ <code>BookingView</code> và gán DataContext = ViewModel đó.</p>
+<h3 id="1-6-mvc-ban-web-va-mvvm-ban-desktop-cung-mot-man-hinh-dat-li">1.6. MVC (bản web) và MVVM (bản desktop): cùng một màn hình đặt lịch</h3>
+<div class="scroll"><table><thead><tr>
+<th></th>
+<th>Bản web (MVC)</th>
+<th>Bản desktop (MVVM)</th>
+</tr>
+</thead><tbody><tr>
+<td>Ai nhận cú bấm</td>
+<td><code>AppointmentsController.Create</code> (POST)</td>
+<td><code>BookingViewModel.ConfirmCommand</code></td>
+</tr>
+<tr>
+<td>Đổi bác sĩ thì sao</td>
+<td>Form GET gửi lại, server dựng <strong>cả trang mới</strong></td>
+<td><code>OnSelectedDoctorChanged</code> tự chạy, <strong>chỉ lưới giờ</strong> được tải lại</td>
+</tr>
+<tr>
+<td>Trạng thái giữa hai lần thao tác</td>
+<td>Mất sau mỗi request, phải mang theo bằng ô ẩn, URL</td>
+<td>ViewModel <strong>sống</strong> suốt lúc màn hình mở</td>
+</tr>
+<tr>
+<td>Nút bị mờ khi chưa đủ điều kiện</td>
+<td>Không có, phải gửi form mới biết</td>
+<td>Có, nhờ <code>CanExecute</code></td>
+</tr>
+<tr>
+<td>Kiểm tra ô nhập</td>
+<td>Khi gửi form (<code>ModelState</code>)</td>
+<td>Ngay khi gõ (<code>ObservableValidator</code>)</td>
+</tr>
+<tr>
+<td>Bảng thuốc thêm/xóa dòng</td>
+<td>Cần JavaScript</td>
+<td><code>ObservableCollection</code>, không cần gì thêm</td>
+</tr>
+<tr>
+<td>Chống CSRF, cookie</td>
+<td>Cần</td>
+<td>Không cần, vì không có trình duyệt</td>
+</tr>
+<tr>
+<td>Điểm chung</td>
+<td><strong>Tách giao diện khỏi nghiệp vụ.</strong> Cả hai gọi đúng cùng <code>IAppointmentService</code></td>
+<td></td>
+</tr>
+</tbody></table></div>
+<hr>
+</div></section><section class="part part--c"><header class="part__head" id="phan-c-luong-tiep-tan-bang-mvvm"><span class="part__letter" aria-hidden="true">C</span><div><p class="part__note">Phần việc của bạn — học kỹ nhất</p><h1>PHẦN C — LUỒNG TIẾP TÂN BẰNG MVVM</h1></div></header><div class="part__body"><div class="h2-row"><h2 id="c1-ban-do-file-cua-phan-c">C1. Bản đồ file của phần C</h2><button type="button" class="done" data-done="c1-ban-do-file-cua-phan-c" aria-pressed="false">Đánh dấu đã học</button></div>
+<div class="scroll"><table><thead><tr>
+<th>Màn hình</th>
+<th>ViewModel (C# thuần)</th>
+<th>View (XAML)</th>
+<th>Service gọi tới</th>
+</tr>
+</thead><tbody><tr>
+<td>Danh sách lịch hẹn</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/AppointmentListViewModel.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/AppointmentListViewModel.cs trong VS Code">AppointmentListViewModel.cs</a></td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/AppointmentListView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/AppointmentListView.xaml trong VS Code">AppointmentListView.xaml</a></td>
+<td><code>IAppointmentService</code></td>
+</tr>
+<tr>
+<td><strong>Đặt lịch</strong> ⭐</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs trong VS Code">BookingViewModel.cs</a></td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml trong VS Code">BookingView.xaml</a></td>
+<td><code>IUserService</code>, <code>IPatientService</code>, <code>IAppointmentService</code></td>
+</tr>
+<tr>
+<td>Hàng chờ check-in</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/CheckInViewModels.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/CheckInViewModels.cs trong VS Code">CheckInViewModels.cs</a></td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/CheckInQueueView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/CheckInQueueView.xaml trong VS Code">CheckInQueueView.xaml</a></td>
+<td><code>IReceptionService</code></td>
+</tr>
+<tr>
+<td>Ghi sinh hiệu</td>
+<td>(cùng file trên)</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/CheckInView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/CheckInView.xaml trong VS Code">CheckInView.xaml</a></td>
+<td><code>IReceptionService</code></td>
+</tr>
+<tr>
+<td>Hồ sơ bệnh nhi, tạo hồ sơ</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/PatientViewModels.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/PatientViewModels.cs trong VS Code">PatientViewModels.cs</a></td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/PatientListView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/PatientListView.xaml trong VS Code">PatientListView.xaml</a>, <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/CreatePatientView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/CreatePatientView.xaml trong VS Code">CreatePatientView.xaml</a></td>
+<td><code>IPatientService</code></td>
+</tr>
+<tr>
+<td>Dòng hiển thị</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/ReceptionRows.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/ReceptionRows.cs trong VS Code">ReceptionRows.cs</a></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<p>Đúng quy ước của nhóm: phần C nằm trong <code>ViewModels/Reception</code> và <code>Views/Reception</code>.</p>
+<div class="h2-row"><h2 id="c2-bookingviewmodel-doc-tung-khoi">C2. BookingViewModel: đọc từng khối</h2><button type="button" class="done" data-done="c2-bookingviewmodel-doc-tung-khoi" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs trong VS Code">BookingViewModel.cs</a></p>
+<h3 id="khoi-1-khai-bao-lop">Khối 1: khai báo lớp</h3>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">public sealed partial class BookingViewModel(IServiceRunner runner, INavigator navigator) : PageViewModel</code></pre></figure>
+<ul>
+<li><code>partial</code>: bắt buộc để CommunityToolkit sinh thêm code.</li>
+<li><code>(IServiceRunner runner, INavigator navigator)</code>: <strong>primary constructor</strong>. DI đưa vào &quot;cách gọi Service&quot; và &quot;cách chuyển trang&quot;. ViewModel không tự <code>new</code> gì cả.</li>
+<li><code>: PageViewModel</code>: được sẵn <code>Title</code>, <code>LoadCommand</code>, <code>IsBusy</code>, <code>ErrorMessage</code>, <code>SuccessMessage</code> (xem C8).</li>
+</ul>
+<h3 id="khoi-2-trang-thai-cua-man-hinh-buoc-1-va-buoc-2">Khối 2: trạng thái của màn hình (bước 1 và bước 2)</h3>
+<p><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:38" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:38 trong VS Code">BookingViewModel.cs:38</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">[ObservableProperty]
+[NotifyPropertyChangedFor(nameof(HasPatient))]        // SelectedPatient đổi -&gt; báo luôn HasPatient đổi
+[NotifyCanExecuteChangedFor(nameof(ConfirmCommand))]  // ... và bảo nút Xác nhận kiểm tra lại CanExecute
+private PatientRow? selectedPatient;
+
+public ObservableCollection&lt;SlotItem&gt; Slots { get; } = [];   // lưới khung giờ</code></pre></figure>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;<code>NotifyCanExecuteChangedFor</code> để làm gì?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>Nút &quot;Xác nhận lịch&quot; chỉ hỏi lại <code>CanConfirm()</code> khi được báo. Mỗi khi bé, bác sĩ hoặc khung giờ đổi, thuộc tính này báo cho nút kiểm tra lại, nên nút tự sáng lên hoặc mờ đi đúng lúc.</p></div></details>
+<h3 id="khoi-3-nap-du-lieu-khi-mo-trang">Khối 3: nạp dữ liệu khi mở trang</h3>
+<p><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:71" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:71 trong VS Code">BookingViewModel.cs:71</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">protected override async Task OnLoadAsync()
+{
+    var doctors = await runner.RunAsync((IUserService s) =&gt; s.GetDoctorsAsync());
+    ...
+    await LoadPatientsAsync();
+    if (PreselectedPatientId is { } id)
+        SelectedPatient = Patients.FirstOrDefault(x =&gt; x.PatientId == id);   // mở từ hồ sơ bé -&gt; chọn sẵn
+    SelectedDoctor ??= Doctors.FirstOrDefault();  // gán bác sĩ -&gt; kích hoạt tải lưới giờ (khối 4)
+}</code></pre></figure>
+<p><code>runner.RunAsync((IUserService s) =&gt; ...)</code> nghĩa là: &quot;lấy cho tôi một <code>IUserService</code> rồi chạy việc này&quot;. Vì sao phải đi qua <code>runner</code> thay vì nhận <code>IUserService</code> trực tiếp? Xem <strong>A4</strong>, câu hỏi hay bị hỏi nhất của bản desktop.</p>
+<h3 id="khoi-4-doi-bac-si-hoac-ngay-thi-luoi-gio-tu-tai-lai">Khối 4: đổi bác sĩ hoặc ngày thì lưới giờ tự tải lại</h3>
+<p><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:107" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:107 trong VS Code">BookingViewModel.cs:107</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">partial void OnSelectedDoctorChanged(DoctorOptionDto? value) =&gt; LoadSlotsCommand.Execute(null);</code></pre></figure>
+<p>Với mỗi <code>[ObservableProperty]</code>, bộ sinh mã tạo sẵn một &quot;móc&quot; <code>partial void On&lt;TênThuộcTính&gt;Changed</code>. Ta viết thân hàm, và nó <strong>tự chạy mỗi khi giá trị đổi</strong>. Nhờ vậy XAML không cần sự kiện <code>SelectionChanged</code>, code-behind trống trơn.</p>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;Bản web cần hai form, sao bản desktop không cần?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>Web phải gửi request lên server để có lưới giờ mới, nên cần form GET. Ở desktop, ViewModel nằm ngay trong bộ nhớ: đổi bác sĩ là chạy hàm tải lưới luôn.</p></div></details>
+<h3 id="khoi-5-tai-luoi-gio-an-toan-khi-bam-lien-tuc">Khối 5: tải lưới giờ an toàn khi bấm liên tục</h3>
+<p><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:118" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:118 trong VS Code">BookingViewModel.cs:118</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">private int slotRequestVersion;
+
+private async Task ReloadSlotsAsync()
+{
+    var version = ++slotRequestVersion;          // đánh số lần tải này
+    ...
+    var slots = await runner.RunAsync((IAppointmentService s) =&gt; s.GetSlotsAsync(SelectedDoctor.UserId, date));
+    if (version != slotRequestVersion) return;   // đã có lần tải MỚI hơn -&gt; bỏ kết quả cũ
+    Slots.Clear();
+    foreach (var slot in slots) Slots.Add(new SlotItem(slot));
+}</code></pre></figure>
+<p>Tình huống thật: tiếp tân đổi bác sĩ A sang bác sĩ B rất nhanh. Hai lần tải chạy chồng nhau, lần của A có thể về <strong>sau</strong> lần của B. Nếu không đánh số, lưới sẽ hiện khung giờ của bác sĩ A dù ô chọn đang là B. Đây là một <strong>race condition</strong> (tranh chấp thứ tự) ở phía giao diện.</p>
+<h3 id="khoi-6-xac-nhan">Khối 6: xác nhận</h3>
+<p><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:151" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs:151 trong VS Code">BookingViewModel.cs:151</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">private bool CanConfirm() =&gt; SelectedPatient is not null &amp;&amp; SelectedDoctor is not null
+                             &amp;&amp; SelectedSlot is { IsAvailable: true } &amp;&amp; SelectedDate is not null;
+
+[RelayCommand(CanExecute = nameof(CanConfirm))]
+private Task ConfirmAsync() =&gt; RunBusyAsync(async () =&gt;
+{
+    var slot = SelectedSlot!; var doctor = SelectedDoctor!; var patient = SelectedPatient!;   // chụp lại lựa chọn
+    var startUtc = ClinicClock.ToUtc(date.ToDateTime(slot.Start));                          // giờ VN -&gt; UTC
+    var result = await runner.RunAsync((IAppointmentService s) =&gt; s.CreateAppointmentAsync(
+        new CreateAppointmentDto(patient.PatientId, doctor.UserId, startUtc, startUtc.AddMinutes(30), Reason)));
+
+    if (result.Succeeded) SuccessMessage = $&quot;{result.Message} {patient.FullName} ({patient.MedicalRecordNumber}) ...&quot;;
+    else ErrorMessage = result.Message;   // ví dụ: &quot;Khung giờ này vừa được đặt...&quot;
+
+    await ReloadSlotsAsync();             // thành công hay thất bại đều tải lại lưới MỚI NHẤT
+}, clearSuccess: true);</code></pre></figure>
+<ul>
+<li><strong>Chụp lựa chọn vào biến cục bộ</strong> trước khi <code>await</code>: trong lúc chờ database, người dùng có thể bấm chọn thứ khác.</li>
+<li>Service vẫn là <strong>trọng tài cuối cùng</strong>: ba lớp chống trùng (truy vấn chồng lấn + transaction Serializable + unique index) y như bản web. <code>CanExecute</code> chỉ giúp người dùng ít sai. → Hướng dẫn gốc mục 5.3.</li>
+<li>Bị trùng thì <strong>giữ</strong> bé, bác sĩ và ngày, chỉ bỏ khung giờ. Đây là quyết định UX giống bản web.</li>
+</ul>
+<div class="h2-row"><h2 id="c3-bookingview-xaml-doc-binding-tung-cho">C3. BookingView.xaml: đọc binding từng chỗ</h2><button type="button" class="done" data-done="c3-bookingview-xaml-doc-binding-tung-cho" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml trong VS Code">BookingView.xaml</a></p>
+<div class="scroll"><table><thead><tr>
+<th>Chỗ trên màn hình</th>
+<th>XAML</th>
+<th>Nối vào ViewModel</th>
+</tr>
+</thead><tbody><tr>
+<td>Ô tìm bé</td>
+<td><code>Text=&quot;{Binding PatientKeyword, UpdateSourceTrigger=PropertyChanged}&quot;</code> + <code>KeyBinding Key=&quot;Enter&quot;</code></td>
+<td><code>PatientKeyword</code>, <code>SearchPatientsCommand</code></td>
+</tr>
+<tr>
+<td>Danh sách bé (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:44" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:44 trong VS Code">dòng 44</a>)</td>
+<td><code>ItemsSource=&quot;{Binding Patients}&quot; SelectedItem=&quot;{Binding SelectedPatient}&quot;</code></td>
+<td><code>Patients</code>, <code>SelectedPatient</code></td>
+</tr>
+<tr>
+<td>Ô chọn bác sĩ (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:88" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:88 trong VS Code">dòng 88</a>)</td>
+<td><code>SelectedItem=&quot;{Binding SelectedDoctor}&quot;</code></td>
+<td>đổi là chạy <code>OnSelectedDoctorChanged</code></td>
+</tr>
+<tr>
+<td>Ngày khám</td>
+<td><code>DatePicker SelectedDate=&quot;{Binding SelectedDate}&quot; DisplayDateStart=&quot;{Binding MinDate}&quot;</code></td>
+<td>không cho chọn ngày quá khứ</td>
+</tr>
+<tr>
+<td>Lưới giờ (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:105" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:105 trong VS Code">dòng 105</a>)</td>
+<td><code>ListBox ItemsSource=&quot;{Binding Slots}&quot;</code> + <code>UniformGrid Columns=&quot;5&quot;</code></td>
+<td>5 khung mỗi hàng</td>
+</tr>
+<tr>
+<td>Khung bận bị khóa (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:114" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:114 trong VS Code">dòng 114</a>)</td>
+<td><code>&lt;Setter Property=&quot;IsEnabled&quot; Value=&quot;{Binding IsAvailable}&quot; /&gt;</code></td>
+<td><code>SlotItem.IsAvailable</code></td>
+</tr>
+<tr>
+<td>Nút xác nhận (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:145" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml:145 trong VS Code">dòng 145</a>)</td>
+<td><code>Command=&quot;{Binding ConfirmCommand}&quot;</code></td>
+<td>tự mờ nhờ <code>CanConfirm</code></td>
+</tr>
+<tr>
+<td>Tóm tắt bên phải</td>
+<td><code>Text=&quot;{Binding SelectedPatient.FullName}&quot;</code></td>
+<td>đường dẫn nhiều cấp: bé đang chọn → tên</td>
+</tr>
+</tbody></table></div>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;<code>ItemsPanel</code> và <code>ItemTemplate</code> khác nhau thế nào?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p><code>ItemsPanel</code> quyết định <strong>cách xếp</strong> các phần tử (ở đây <code>UniformGrid</code> 5 cột thay vì xếp dọc). <code>ItemTemplate</code> quyết định <strong>mỗi phần tử trông ra sao</strong> (giờ to + chú thích nhỏ).</p></div></details>
+<div class="h2-row"><h2 id="c4-ba-loai-lop-du-lieu-o-ban-desktop">C4. Ba loại lớp dữ liệu ở bản desktop</h2><button type="button" class="done" data-done="c4-ba-loai-lop-du-lieu-o-ban-desktop" aria-pressed="false">Đánh dấu đã học</button></div>
+<div class="scroll"><table><thead><tr>
+<th></th>
+<th>DTO (Common)</th>
+<th>&quot;Row&quot; (ViewModel)</th>
+<th>ViewModel trang</th>
+</tr>
+</thead><tbody><tr>
+<td>Ví dụ</td>
+<td><code>AppointmentListItemDto</code></td>
+<td><code>AppointmentRow</code></td>
+<td><code>AppointmentListViewModel</code></td>
+</tr>
+<tr>
+<td>Giữ gì</td>
+<td>Dữ liệu thô từ Service (giờ UTC, SĐT dạng số)</td>
+<td><strong>Chữ sẵn sàng hiển thị</strong>: <code>Time</code> (giờ VN), <code>GuardianLine</code>, <code>StatusLabel</code>, <code>CanAct</code></td>
+<td>Trạng thái và lệnh của cả trang</td>
+</tr>
+<tr>
+<td>Báo thay đổi?</td>
+<td>Không (bất biến)</td>
+<td>Không cần (chỉ đọc)</td>
+<td>Có</td>
+</tr>
+</tbody></table></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/ReceptionRows.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/ReceptionRows.cs trong VS Code">ReceptionRows.cs</a>. <code>AppointmentRow</code> bọc DTO để XAML chỉ việc <code>{Binding GuardianLine}</code> thay vì tự ghép chuỗi hay tự đổi giờ. Nhờ vậy test cũng kiểm tra được cách hiển thị.</p>
+<div class="h2-row"><h2 id="c5-danh-sach-lich-lenh-nam-trong-tung-dong">C5. Danh sách lịch: lệnh nằm trong từng dòng</h2><button type="button" class="done" data-done="c5-danh-sach-lich-lenh-nam-trong-tung-dong" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/AppointmentListView.xaml:88" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/AppointmentListView.xaml:88 trong VS Code">AppointmentListView.xaml:88</a></p>
+<figure class="code"><figcaption><span>XAML</span></figcaption><pre><code class="language-xml">&lt;Button Content=&quot;Check-in&quot;
+        Command=&quot;{Binding DataContext.CheckInCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}&quot;
+        CommandParameter=&quot;{Binding}&quot; /&gt;</code></pre></figure>
+<p>Bên trong một dòng của bảng, DataContext là <strong>dòng đó</strong> (<code>AppointmentRow</code>), không phải ViewModel của trang. Muốn gọi lệnh của trang, ta &quot;đi ngược lên&quot; tới DataGrid (<code>RelativeSource AncestorType=DataGrid</code>) rồi lấy DataContext của nó. <code>CommandParameter=&quot;{Binding}&quot;</code> gửi <strong>chính dòng đó</strong> làm tham số, nên ViewModel biết bấm vào lịch nào.</p>
+<p><strong>Hủy lịch hỏi lý do</strong> mà ViewModel không biết hộp thoại là gì:</p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">var reason = dialogs.AskText(&quot;Hủy lịch hẹn&quot;, $&quot;Lý do hủy lịch {row.Time} ...&quot;);
+if (reason is null) return;   // người dùng bấm Hủy trên hộp thoại</code></pre></figure>
+<p><code>dialogs</code> là <code>IDialogService</code>. Khi chạy thật, nó là <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Services/WpfDialogService.cs" title="Mở src/ClinicManagementSystem.Desktop/Services/WpfDialogService.cs trong VS Code">WpfDialogService</a> mở cửa sổ nhỏ. Khi test, nó là bản giả luôn trả &quot;Lý do kiểm thử&quot;. → Xem A7.</p>
+<div class="h2-row"><h2 id="c6-check-in-kiem-tra-du-lieu-ngay-khi-go">C6. Check-in: kiểm tra dữ liệu ngay khi gõ</h2><button type="button" class="done" data-done="c6-check-in-kiem-tra-du-lieu-ngay-khi-go" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/CheckInViewModels.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/CheckInViewModels.cs trong VS Code">CheckInViewModels.cs</a> · <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/CheckInView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/CheckInView.xaml trong VS Code">CheckInView.xaml</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">[ObservableProperty]
+[NotifyDataErrorInfo]                                  // kiểm tra NGAY khi giá trị đổi
+[NotifyPropertyChangedFor(nameof(IsFever))]
+[Required(ErrorMessage = &quot;Vui lòng nhập nhiệt độ.&quot;)]
+[Range(30d, 45d, ErrorMessage = &quot;Nhiệt độ phải từ 30 đến 45 °C.&quot;)]
+private decimal? temperatureC;
+
+public bool IsFever =&gt; TemperatureC &gt;= 38;             // hiện cảnh báo vàng ngay khi rời ô</code></pre></figure>
+<ul>
+<li>Các thuộc tính <code>[Required]</code>, <code>[Range]</code> <strong>giống hệt</strong> ViewModel bên web. Đây là kiến thức dùng lại được.</li>
+<li><code>ViewModelBase</code> kế thừa <code>ObservableValidator</code>, lớp này cài sẵn <code>INotifyDataErrorInfo</code>. WPF đọc interface này và <strong>tự viền đỏ</strong> ô sai. Dòng chữ lỗi bên dưới đến từ <code>FieldErrorTemplate</code> trong <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Themes/Styles.xaml" title="Mở src/ClinicManagementSystem.Desktop/Themes/Styles.xaml trong VS Code">Styles.xaml</a>.</li>
+<li>Khi bấm xác nhận: <code>ValidateAllProperties()</code> kiểm tra cả những ô người dùng <strong>chưa chạm vào</strong>. Có lỗi thì dừng, không gọi Service.</li>
+<li><code>Text=&quot;{Binding WeightKg, TargetNullValue=&#39;&#39;}&quot;</code>: ô trống tương ứng <code>null</code>, để <code>[Required]</code> bắt được &quot;chưa nhập&quot;.</li>
+<li>Service vẫn kiểm tra khoảng giá trị lần nữa. Không bao giờ tin riêng giao diện.</li>
+</ul>
+<p>Thành công thì chuyển về hàng chờ kèm thông báo xanh:</p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">navigator.NavigateTo&lt;CheckInQueueViewModel&gt;(page =&gt; page.SuccessMessage = message);</code></pre></figure>
+<div class="h2-row"><h2 id="c7-ho-so-benh-nhi-tao-xong-chuyen-thang-sang-dat-lich">C7. Hồ sơ bệnh nhi: tạo xong chuyển thẳng sang đặt lịch</h2><button type="button" class="done" data-done="c7-ho-so-benh-nhi-tao-xong-chuyen-thang-sang-dat-lich" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/PatientViewModels.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/PatientViewModels.cs trong VS Code">PatientViewModels.cs</a></p>
+<ul>
+<li><code>PatientListViewModel.CanManage</code>: bác sĩ cũng mở được trang này để tra cứu, nhưng <strong>không thấy</strong> nút &quot;Tạo hồ sơ&quot; hay &quot;Đặt lịch&quot;. Ẩn nút chỉ để gọn; quyền thật do <code>PermissionGuard</code> kiểm tra.</li>
+<li><code>CreatePatientViewModel</code> tra <strong>SĐT phụ huynh</strong> khi gõ đủ số. XAML dùng <code>Delay=400</code> để đợi người dùng ngừng gõ 0,4 giây rồi mới tra.</li>
+<li>Lưu xong:</li>
+</ul>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">navigator.NavigateTo&lt;BookingViewModel&gt;(page =&gt;
+{
+    page.PreselectedPatientId = patientId;   // mở trang đặt lịch và CHỌN SẴN bé vừa tạo
+    page.SuccessMessage = result.Message;
+});</code></pre></figure>
+<p>Luồng tiếp tân không bị đứt: <strong>bé mới đến → tạo hồ sơ → đặt lịch ngay</strong> mà không phải tìm lại.</p>
+<div class="h2-row"><h2 id="c8-trang-thai-ban-va-thong-bao-viet-mot-lan-dung-moi-trang">C8. Trạng thái bận và thông báo: viết một lần, dùng mọi trang</h2><button type="button" class="done" data-done="c8-trang-thai-ban-va-thong-bao-viet-mot-lan-dung-moi-trang" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/ViewModelBase.cs:40" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/ViewModelBase.cs:40 trong VS Code">ViewModelBase.cs:40</a> · <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Controls/MessageBar.xaml" title="Mở src/ClinicManagementSystem.Desktop/Controls/MessageBar.xaml trong VS Code">MessageBar.xaml</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">protected async Task RunBusyAsync(Func&lt;Task&gt; work, bool clearSuccess = false)
+{
+    ErrorMessage = null; ...
+    IsBusy = true;
+    try { await work(); }
+    catch (UnauthorizedAccessException e) { ErrorMessage = e.Message; }      // sai quyền
+    catch (Exception e) { ErrorMessage = &quot;Không thực hiện được thao tác: &quot; + e.Message; }  // mất kết nối DB...
+    finally { IsBusy = false; }
+}</code></pre></figure>
+<p>Mọi thao tác đều đi qua hàm này, nên: (1) đang chạy thì hiện thanh tiến trình; (2) <strong>app không bao giờ sập</strong> vì lỗi nghiệp vụ hay mất kết nối; (3) lỗi hiện thành dòng chữ đỏ dễ hiểu. <code>MessageBar</code> là một UserControl đặt ở mọi trang, tự bind vào <code>IsBusy</code>, <code>ErrorMessage</code>, <code>SuccessMessage</code> của trang chứa nó.</p>
+<div class="h2-row"><h2 id="c9-test-viewmodel-loi-ich-lon-nhat-cua-mvvm">C9. Test ViewModel: lợi ích lớn nhất của MVVM</h2><button type="button" class="done" data-done="c9-test-viewmodel-loi-ich-lon-nhat-cua-mvvm" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/tests/ClinicManagementSystem.Desktop.Tests/ViewModelTests.cs" title="Mở tests/ClinicManagementSystem.Desktop.Tests/ViewModelTests.cs trong VS Code">ViewModelTests.cs</a> · <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/tests/ClinicManagementSystem.Desktop.Tests/Fakes.cs" title="Mở tests/ClinicManagementSystem.Desktop.Tests/Fakes.cs trong VS Code">Fakes.cs</a></p>
+<p>Vì ViewModel là C# thuần và chỉ biết interface, ta test nó bằng <strong>service giả</strong>, không cần cửa sổ, không cần database:</p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">[Fact]
+public async Task Khung_gio_vua_bi_quay_khac_dat_thi_bao_loi_giu_lua_chon_va_bo_khung_cu()
+{
+    appointments.NextResult = ServiceResult&lt;AppointmentDto&gt;.Failure(&quot;APPOINTMENT_SLOT_TAKEN&quot;, &quot;Khung giờ này vừa được đặt...&quot;);
+    var vm = CreateViewModel();
+    await vm.LoadCommand.ExecuteAsync(null);
+    vm.SelectedPatient = vm.Patients[0];
+    vm.SelectedSlot = vm.Slots[2];
+
+    await vm.ConfirmCommand.ExecuteAsync(null);      // &quot;bấm nút&quot; bằng code
+
+    Assert.Equal(&quot;Khung giờ này vừa được đặt. Vui lòng chọn khung giờ khác.&quot;, vm.ErrorMessage);
+    Assert.NotNull(vm.SelectedPatient);   // không bắt chọn lại bé
+    Assert.Null(vm.SelectedSlot);         // khung cũ đã mất
+}</code></pre></figure>
+<p>Các test của phần C kiểm tra: tự tải lưới khi đổi bác sĩ/ngày; nút xác nhận chỉ sáng khi đủ điều kiện; gửi đúng giờ UTC (08:00 giờ Việt Nam là 01:00 UTC); bị trùng thì giữ lựa chọn; check-in bỏ trống thì báo lỗi và <strong>không</strong> gọi Service; sốt từ 38 °C thì hiện cảnh báo.</p>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;MVC test được Controller, sao lại nói MVVM dễ test hơn?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>Controller trả về View/Redirect, muốn kiểm &quot;màn hình đang hiện gì&quot; vẫn khó. ViewModel <strong>chính là</strong> trạng thái màn hình: <code>vm.SelectedSlot</code>, <code>vm.ErrorMessage</code>, <code>vm.ConfirmCommand.CanExecute(...)</code>. Kiểm ViewModel gần như kiểm luôn giao diện, chỉ trừ phần vẽ.</p></div></details>
+<div class="h2-row"><h2 id="c10-so-sanh-phan-c-web-va-desktop">C10. So sánh phần C: web và desktop</h2><button type="button" class="done" data-done="c10-so-sanh-phan-c-web-va-desktop" aria-pressed="false">Đánh dấu đã học</button></div>
+<div class="scroll"><table><thead><tr>
+<th>Việc</th>
+<th>Web (file của C)</th>
+<th>Desktop (file của C)</th>
+</tr>
+</thead><tbody><tr>
+<td>Danh sách lịch</td>
+<td><code>Views/Appointments/Index.cshtml</code> + Controller</td>
+<td><code>AppointmentListView.xaml</code> + <code>AppointmentListViewModel</code></td>
+</tr>
+<tr>
+<td>Đặt lịch</td>
+<td>2 form + <code>data-autosubmit</code> (JavaScript)</td>
+<td>Binding + <code>OnSelectedDoctorChanged</code></td>
+</tr>
+<tr>
+<td>Khóa khung bận</td>
+<td><code>disabled=&quot;@(!slot.IsAvailable)&quot;</code></td>
+<td><code>IsEnabled=&quot;{Binding IsAvailable}&quot;</code></td>
+</tr>
+<tr>
+<td>Hủy lịch hỏi lý do</td>
+<td><code>&lt;details&gt;</code> + ô nhập trong form</td>
+<td><code>IDialogService.AskText</code></td>
+</tr>
+<tr>
+<td>Kiểm tra ô nhập</td>
+<td><code>[Required]</code> + <code>ModelState</code> khi gửi</td>
+<td><code>[Required]</code> + <code>ObservableValidator</code> khi gõ</td>
+</tr>
+<tr>
+<td>Thông báo sau khi lưu</td>
+<td><code>TempData</code> + PRG</td>
+<td><code>SuccessMessage</code> trên ViewModel</td>
+</tr>
+<tr>
+<td>CSS riêng module</td>
+<td><code>reception.css</code></td>
+<td>style trong <code>Themes/Styles.xaml</code></td>
+</tr>
+</tbody></table></div>
+<div class="h2-row"><h2 id="c11-tu-kiem-tra-phan-c">C11. Tự kiểm tra phần C</h2><button type="button" class="done" data-done="c11-tu-kiem-tra-phan-c" aria-pressed="false">Đánh dấu đã học</button></div>
+<ol>
+<li class="check"><input type="checkbox" id="chk-1" data-check="chk-1"><label for="chk-1">Vì sao lớp ViewModel phải có chữ <code>partial</code>?</label></li>
+<li class="check"><input type="checkbox" id="chk-2" data-check="chk-2"><label for="chk-2"><code>[ObservableProperty] private PatientRow? selectedPatient;</code> sinh ra những gì?</label></li>
+<li class="check"><input type="checkbox" id="chk-3" data-check="chk-3"><label for="chk-3"><code>NotifyCanExecuteChangedFor(nameof(ConfirmCommand))</code> giải quyết vấn đề gì?</label></li>
+<li class="check"><input type="checkbox" id="chk-4" data-check="chk-4"><label for="chk-4">Hàm <code>OnSelectedDoctorChanged</code> được gọi khi nào, do ai gọi?</label></li>
+<li class="check"><input type="checkbox" id="chk-5" data-check="chk-5"><label for="chk-5">Vì sao <code>ReloadSlotsAsync</code> phải đánh số lần tải?</label></li>
+<li class="check"><input type="checkbox" id="chk-6" data-check="chk-6"><label for="chk-6">Trong một dòng DataGrid, làm sao nút gọi được lệnh của trang? <code>CommandParameter=&quot;{Binding}&quot;</code> gửi gì?</label></li>
+<li class="check"><input type="checkbox" id="chk-7" data-check="chk-7"><label for="chk-7">Vì sao ViewModel không gọi <code>MessageBox.Show</code> trực tiếp?</label></li>
+<li class="check"><input type="checkbox" id="chk-8" data-check="chk-8"><label for="chk-8"><code>[NotifyDataErrorInfo]</code> và <code>ValidateAllProperties()</code> khác nhau thế nào?</label></li>
+<li class="check"><input type="checkbox" id="chk-9" data-check="chk-9"><label for="chk-9"><code>TargetNullValue=&#39;&#39;</code> để làm gì?</label></li>
+<li class="check"><input type="checkbox" id="chk-10" data-check="chk-10"><label for="chk-10">Kể 3 điều test ViewModel kiểm tra được mà không cần mở cửa sổ.</label></li>
+</ol>
+<p><strong>Thực hành (đọc code, không cần Windows):</strong></p>
+<ol>
+<li class="check"><input type="checkbox" id="chk-11" data-check="chk-11"><label for="chk-11">Mở <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Reception/BookingViewModel.cs trong VS Code">BookingViewModel.cs</a> và <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml" title="Mở src/ClinicManagementSystem.Desktop/Views/Reception/BookingView.xaml trong VS Code">BookingView.xaml</a> cạnh nhau. Với mỗi <code>{Binding X}</code> trong XAML, tìm <code>X</code> trong ViewModel.</label></li>
+<li class="check"><input type="checkbox" id="chk-12" data-check="chk-12"><label for="chk-12">Chạy test trong Terminal (chạy được trên Mac): <code>dotnet test tests/ClinicManagementSystem.Desktop.Tests</code>.</label></li>
+<li class="check"><input type="checkbox" id="chk-13" data-check="chk-13"><label for="chk-13">Thử làm hỏng: sửa <code>CanConfirm</code> để luôn trả <code>true</code> rồi chạy lại test. Xem test nào báo đỏ và vì sao. Nhớ sửa lại.</label></li>
+</ol>
+<hr>
+</div></section><section class="part part--a"><header class="part__head" id="phan-a-nen-tang-va-tich-hop"><span class="part__letter" aria-hidden="true">A</span><div><p class="part__note">Nền tảng và tích hợp</p><h1>PHẦN A — NỀN TẢNG VÀ TÍCH HỢP</h1></div></header><div class="part__body"><div class="h2-row"><h2 id="a1-vi-sao-tach-viewmodel-thanh-project-rieng">A1. Vì sao tách ViewModel thành project riêng</h2><button type="button" class="done" data-done="a1-vi-sao-tach-viewmodel-thanh-project-rieng" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/ClinicManagementSystem.Desktop.ViewModels.csproj" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/ClinicManagementSystem.Desktop.ViewModels.csproj trong VS Code">ClinicManagementSystem.Desktop.ViewModels.csproj</a> · <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/ClinicManagementSystem.Desktop.csproj" title="Mở src/ClinicManagementSystem.Desktop/ClinicManagementSystem.Desktop.csproj trong VS Code">ClinicManagementSystem.Desktop.csproj</a></p>
+<div class="scroll"><table><thead><tr>
+<th>Project</th>
+<th>TargetFramework</th>
+<th>Có WPF?</th>
+<th>Chạy trên Mac?</th>
+</tr>
+</thead><tbody><tr>
+<td><code>Desktop.ViewModels</code></td>
+<td><code>net10.0</code></td>
+<td><strong>Không</strong></td>
+<td>Có (build + test)</td>
+</tr>
+<tr>
+<td><code>Desktop</code></td>
+<td><code>net10.0-windows</code></td>
+<td>Có (<code>UseWPF</code>)</td>
+<td>Chỉ build (<code>EnableWindowsTargeting</code>)</td>
+</tr>
+</tbody></table></div>
+<p>Tách như vậy <strong>bắt buộc</strong> ViewModel không dùng được bất kỳ thứ gì của WPF: không <code>MessageBox</code>, không <code>Visibility</code>, không <code>Button</code>. Nếu lỡ viết, trình biên dịch báo lỗi ngay. Đây là cách &quot;dùng trình biên dịch để giữ kỷ luật MVVM&quot;, đồng thời giúp test ViewModel chạy trên mọi máy.</p>
+<p>Chiều tham chiếu:</p>
+<div class="scroll"><pre class="diagram">Desktop (WPF) ──► Desktop.ViewModels ──► Services ──► DataAccess ──► Common
+      └──────────────────────────────────► Services / DataAccess (chỉ để đăng ký DI trong App.xaml.cs)</pre></div>
+<div class="h2-row"><h2 id="a2-app-xaml-cs-composition-root-cua-ban-desktop">A2. App.xaml.cs: composition root của bản desktop</h2><button type="button" class="done" data-done="a2-app-xaml-cs-composition-root-cua-ban-desktop" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/App.xaml.cs" title="Mở src/ClinicManagementSystem.Desktop/App.xaml.cs trong VS Code">App.xaml.cs</a>. Vai trò giống <code>Program.cs</code> bên web.</p>
+<div class="scroll"><table><thead><tr>
+<th>Bước</th>
+<th>Dòng</th>
+<th>Làm gì</th>
+</tr>
+</thead><tbody><tr>
+<td>1</td>
+<td>đầu hàm</td>
+<td>Đọc <code>appsettings.json</code>, <code>appsettings.Local.json</code> (bí mật, không lên Git), biến môi trường</td>
+</tr>
+<tr>
+<td>2</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/App.xaml.cs:52" title="Mở src/ClinicManagementSystem.Desktop/App.xaml.cs:52 trong VS Code">52-56</a></td>
+<td><code>AddClinicDataAccess</code> + <code>AddClinicBusinessServices</code> (<strong>y như web</strong>) + <code>AddClinicViewModels</code> + <code>WpfDialogService</code> + <code>MainWindow</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/App.xaml.cs:60" title="Mở src/ClinicManagementSystem.Desktop/App.xaml.cs:60 trong VS Code">60</a></td>
+<td><code>BuildServiceProvider(ValidateScopes, ValidateOnBuild)</code>: đăng ký DI sai thì báo <strong>ngay khi mở app</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>sau đó</td>
+<td>Nếu <code>Seed:Enabled</code> thì chạy <code>DbInitializer</code> (migration + dữ liệu mẫu), lỗi thì hiện hộp thoại dễ hiểu</td>
+</tr>
+<tr>
+<td>5</td>
+<td><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/App.xaml.cs:85" title="Mở src/ClinicManagementSystem.Desktop/App.xaml.cs:85 trong VS Code">85</a></td>
+<td>Mở <code>MainWindow</code>, gọi <code>ShellViewModel.Start()</code> → màn hình đăng nhập</td>
+</tr>
+</tbody></table></div>
+<p><code>App.xaml</code> <strong>không có</strong> <code>StartupUri</code>, vì cửa sổ chính cần được DI tạo ra để nhận <code>ShellViewModel</code> qua constructor.</p>
+<div class="h2-row"><h2 id="a3-vong-doi-di-trong-app-desktop">A3. Vòng đời DI trong app desktop</h2><button type="button" class="done" data-done="a3-vong-doi-di-trong-app-desktop" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/DependencyInjection/ViewModelServiceCollectionExtensions.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/DependencyInjection/ViewModelServiceCollectionExtensions.cs trong VS Code">ViewModelServiceCollectionExtensions.cs</a></p>
+<div class="scroll"><table><thead><tr>
+<th>Đăng ký</th>
+<th>Vòng đời</th>
+<th>Vì sao</th>
+</tr>
+</thead><tbody><tr>
+<td><code>UserSession</code> (+ <code>ICurrentUserContext</code>)</td>
+<td>Singleton</td>
+<td>Một phiên đăng nhập cho cả app</td>
+</tr>
+<tr>
+<td><code>IServiceRunner</code>, <code>INavigator</code>, <code>ShellViewModel</code></td>
+<td>Singleton</td>
+<td>Sống suốt app</td>
+</tr>
+<tr>
+<td>Mọi trang (<code>BookingViewModel</code>...)</td>
+<td><strong>Transient</strong></td>
+<td>Mỗi lần mở trang là một ViewModel mới, dữ liệu tươi</td>
+</tr>
+<tr>
+<td><code>ClinicDbContext</code>, các Service</td>
+<td>Scoped</td>
+<td>Giữ nguyên như web, dùng qua <code>IServiceRunner</code></td>
+</tr>
+</tbody></table></div>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;Trên web, Scoped nghĩa là một request. Desktop không có request, vậy Scoped là gì?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>Scope phải <strong>tự tạo</strong>. Đó chính là việc của <code>IServiceRunner</code> (A4).</p></div></details>
+<div class="h2-row"><h2 id="a4-iservicerunner-moi-thao-tac-mot-dbcontext">A4. IServiceRunner: mỗi thao tác một DbContext ⭐</h2><button type="button" class="done" data-done="a4-iservicerunner-moi-thao-tac-mot-dbcontext" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/AppServices.cs:24" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/AppServices.cs:24 trong VS Code">AppServices.cs:24</a></p>
+<figure class="code"><figcaption><span>C#</span></figcaption><pre><code class="language-csharp">public sealed class ScopedServiceRunner(IServiceScopeFactory scopeFactory) : IServiceRunner
+{
+    public async Task&lt;TResult&gt; RunAsync&lt;TService, TResult&gt;(Func&lt;TService, Task&lt;TResult&gt;&gt; work) where TService : notnull
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();   // = &quot;một request&quot; của bản web
+        var service = scope.ServiceProvider.GetRequiredService&lt;TService&gt;();
+        return await work(service);
+    }                                                               // hết khối: scope hủy, DbContext hủy
+}</code></pre></figure>
+<p><strong>Vì sao không tiêm thẳng <code>IAppointmentService</code> vào ViewModel?</strong> Có hai cách làm sai:</p>
+<div class="scroll"><table><thead><tr>
+<th>Cách sai</th>
+<th>Hậu quả</th>
+</tr>
+</thead><tbody><tr>
+<td>Đăng ký ViewModel là Singleton và tiêm Service vào</td>
+<td>Lỗi <strong>captive dependency</strong>: một DbContext dùng chung suốt app. Dữ liệu <strong>cũ</strong> (DbContext nhớ những gì đã đọc, không thấy quầy khác vừa đặt lịch), và hai thao tác chạy cùng lúc trên một DbContext sẽ lỗi (DbContext <strong>không an toàn đa luồng</strong>)</td>
+</tr>
+<tr>
+<td>Tiêm Service vào ViewModel Transient</td>
+<td>Trang mở lâu thì DbContext của trang cũng sống lâu: vẫn dữ liệu cũ, vẫn rủi ro hai thao tác cùng lúc</td>
+</tr>
+</tbody></table></div>
+<p>Cách đúng: <strong>mỗi lần bấm nút = một scope mới = một DbContext mới</strong>, xong thì hủy. Bản desktop vì thế có cùng đặc tính an toàn như &quot;mỗi request một DbContext&quot; của bản web. Ngoài ra, <code>ValidateScopes = true</code> trong <code>App.xaml.cs</code> sẽ báo lỗi ngay nếu ai đó lỡ lấy Service Scoped từ gốc.</p>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;Cú pháp <code>(IUserService s) =&gt; s.GetDoctorsAsync()</code> có gì đặc biệt?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>Ghi rõ kiểu tham số <code>IUserService</code> để C# <strong>tự suy ra</strong> cả hai kiểu generic (<code>TService</code> = <code>IUserService</code>, <code>TResult</code> = danh sách bác sĩ). Không có nó, ta phải viết dài: <code>RunAsync&lt;IUserService, IReadOnlyList&lt;DoctorOptionDto&gt;&gt;(...)</code>.</p></div></details>
+<div class="h2-row"><h2 id="a5-cua-so-chinh-va-dieu-huong">A5. Cửa sổ chính và điều hướng</h2><button type="button" class="done" data-done="a5-cua-so-chinh-va-dieu-huong" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/MainWindow.xaml" title="Mở src/ClinicManagementSystem.Desktop/MainWindow.xaml trong VS Code">MainWindow.xaml</a> · <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Shell/ShellViewModels.cs" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Shell/ShellViewModels.cs trong VS Code">ShellViewModels.cs</a> · <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/AppServices.cs:58" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/AppServices.cs:58 trong VS Code">AppServices.cs:58</a></p>
+<div class="scroll"><pre class="diagram">MainWindow (DataContext = ShellViewModel)
+├── Menu trái: ListBox ItemsSource=MenuItems, SelectedItem=SelectedMenuItem
+│        chọn mục -&gt; OnSelectedMenuItemChanged -&gt; mục.Navigate(navigator)
+└── Vùng nội dung: ContentControl Content=&quot;{Binding Navigator.CurrentPage}&quot;
+         Navigator.NavigateTo&lt;BookingViewModel&gt;() -&gt; CurrentPage = ViewModel mới
+         -&gt; WPF tra ViewMappings.xaml -&gt; vẽ BookingView</pre></div>
+<ul>
+<li><strong>Điều hướng kiểu ViewModel-first</strong>: code chỉ nói &quot;mở <code>BookingViewModel</code>&quot;. View nào vẽ nó là việc của <code>ViewMappings.xaml</code>. ViewModel không biết View tồn tại.</li>
+<li><code>NavigateTo&lt;T&gt;(configure)</code> cho phép <strong>truyền tham số</strong> sang trang mới (mã lịch cần check-in, bé cần đặt lịch).</li>
+<li><code>ShellViewModel.MenuFor(role)</code> (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Shell/ShellViewModels.cs:82" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Shell/ShellViewModels.cs:82 trong VS Code">dòng 82</a>): menu theo vai trò, giống menu bản web. Ẩn menu <strong>không phải</strong> bảo mật.</li>
+</ul>
+<div class="h2-row"><h2 id="a6-dang-nhap-va-phien-lam-viec">A6. Đăng nhập và phiên làm việc</h2><button type="button" class="done" data-done="a6-dang-nhap-va-phien-lam-viec" aria-pressed="false">Đánh dấu đã học</button></div>
+<ul>
+<li><code>UserSession</code> (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/AppServices.cs:77" title="Mở src/ClinicManagementSystem.Desktop.ViewModels/Infrastructure/AppServices.cs:77 trong VS Code">AppServices.cs:77</a>) thay cho cookie bên web. Nó <strong>đồng thời</strong> là <code>ICurrentUserContext</code>, nên tầng Services biết &quot;ai đang thao tác&quot; để kiểm quyền và ghi nhật ký, giống hệt bản web.</li>
+<li>Đăng nhập thành công → <code>session.SignIn(user)</code> → sự kiện <code>Changed</code> → <code>ShellViewModel</code> dựng menu theo vai trò và mở trang đầu tiên. Đăng xuất làm ngược lại.</li>
+<li><strong>Ngoại lệ có chủ đích của MVVM</strong>: <code>PasswordBox</code> của WPF <strong>cố ý không cho binding</strong> mật khẩu, để mật khẩu không nằm lung tung trong bộ nhớ. Code-behind <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Views/Shell/LoginView.xaml.cs:15" title="Mở src/ClinicManagementSystem.Desktop/Views/Shell/LoginView.xaml.cs:15 trong VS Code">LoginView.xaml.cs:15</a> chỉ chép mật khẩu sang ViewModel; ViewModel xóa nó ngay sau khi đăng nhập.</li>
+</ul>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;MVVM nói code-behind phải trống, vậy LoginView có code-behind là sai?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>MVVM không cấm code-behind. Nó cấm <strong>logic nghiệp vụ</strong> trong code-behind. Chép giá trị từ một control không bind được là chuyện <strong>hiển thị</strong>. Việc đăng nhập vẫn nằm trong ViewModel.</p></div></details>
+<div class="h2-row"><h2 id="a7-dich-vu-giao-dien-style-converter">A7. Dịch vụ giao diện, style, converter</h2><button type="button" class="done" data-done="a7-dich-vu-giao-dien-style-converter" aria-pressed="false">Đánh dấu đã học</button></div>
+<ul>
+<li><strong><code>IDialogService</code></strong>: ViewModel chỉ biết interface <code>Confirm</code> / <code>AskText</code>. WPF có <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Services/WpfDialogService.cs" title="Mở src/ClinicManagementSystem.Desktop/Services/WpfDialogService.cs trong VS Code">WpfDialogService</a> + <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Services/TextPromptWindow.xaml" title="Mở src/ClinicManagementSystem.Desktop/Services/TextPromptWindow.xaml trong VS Code">TextPromptWindow</a>; test có <code>FakeDialogs</code>.</li>
+<li><strong><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Themes/Styles.xaml" title="Mở src/ClinicManagementSystem.Desktop/Themes/Styles.xaml trong VS Code">Styles.xaml</a></strong>: màu khai báo một lần (<code>PrimaryBrush</code> #4F7DFF lấy theo bản web và Figma); style cho nút, ô nhập, bảng, thẻ; mẫu lỗi <code>FieldErrorTemplate</code>; mẫu hiển thị &quot;dải nhận diện bệnh nhi&quot; (<code>DataTemplate DataType=PatientBanner</code>). Đây là &quot;CSS&quot; của WPF.</li>
+<li><strong><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/Converters.cs" title="Mở src/ClinicManagementSystem.Desktop/Converters.cs trong VS Code">Converters.cs</a></strong>: ViewModel có <code>bool HasError</code>, WPF cần <code>Visibility</code>. Converter đứng ở tầng View đổi kiểu, để ViewModel không phải biết <code>Visibility</code> là gì.</li>
+</ul>
+<div class="h2-row"><h2 id="a8-cau-hinh-va-chay-tren-windows">A8. Cấu hình và chạy trên Windows</h2><button type="button" class="done" data-done="a8-cau-hinh-va-chay-tren-windows" aria-pressed="false">Đánh dấu đã học</button></div>
+<ol>
+<li>Cài <strong>.NET 10 SDK</strong> và <strong>Docker Desktop</strong> trên máy Windows; bật SQL Server bằng <code>docker compose up -d</code> như bản web.</li>
+<li>Chép <code>src/ClinicManagementSystem.Desktop/appsettings.Local.example.json</code> thành <code>appsettings.Local.json</code>, điền mật khẩu <code>sa</code> và mật khẩu demo (giống bản web).</li>
+<li>Chạy: <code>dotnet run --project src/ClinicManagementSystem.Desktop</code>, hoặc mở <code>ClinicManagementSystem.sln</code> bằng Visual Studio 2022+ và chọn project Desktop làm Startup.</li>
+<li>Đăng nhập <code>letan</code>, <code>bacsi</code>, <code>duocsi</code>, <code>admin</code>.</li>
+</ol>
+<p>Bản desktop và bản web dùng <strong>chung database <code>ClinicWeb</code></strong>: đặt lịch trên web thì app desktop thấy ngay, và ngược lại.</p>
+<hr>
+</div></section><section class="part part--b"><header class="part__head" id="phan-b-du-lieu-va-nghiep-vu-nen"><span class="part__letter" aria-hidden="true">B</span><div><p class="part__note">Dữ liệu và nghiệp vụ nền</p><h1>PHẦN B — DỮ LIỆU VÀ NGHIỆP VỤ NỀN</h1></div></header><div class="part__body"><div class="h2-row"><h2 id="b1-khong-sua-mot-dong-nao-o-tang-du-lieu">B1. Không sửa một dòng nào ở tầng dữ liệu</h2><button type="button" class="done" data-done="b1-khong-sua-mot-dong-nao-o-tang-du-lieu" aria-pressed="false">Đánh dấu đã học</button></div>
+<p>App desktop <strong>không thay đổi</strong> <code>ClinicManagementSystem.DataAccess</code> (Entity, <code>ClinicDbContext</code>, Fluent API, migration, seed) hay <code>ClinicManagementSystem.Services</code>. Bằng chứng trong code: <a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/src/ClinicManagementSystem.Desktop/App.xaml.cs:52" title="Mở src/ClinicManagementSystem.Desktop/App.xaml.cs:52 trong VS Code">App.xaml.cs:52-53</a> gọi đúng hai hàm đăng ký mà <code>Program.cs</code> bên web gọi.</p>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;Điều này chứng minh gì về kiến trúc?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>Tầng nghiệp vụ và dữ liệu <strong>không phụ thuộc giao diện</strong>. Đổi từ web sang desktop chỉ phải viết lại tầng trên cùng. Mọi quy tắc quan trọng (chống trùng lịch, phân quyền, cấp thuốc nguyên tử, nhật ký) <strong>tự động có</strong> ở bản desktop mà không phải viết lại hay kiểm thử lại.</p></div></details>
+<p>Toàn bộ kiến thức B (ERD, quan hệ Guardian–Patient, Fluent API, filtered unique index, RowVersion, migration, seed) giữ nguyên → xem Phần B của <a href="BAI_GIANG_PHONG_KHAM.html">BAI_GIANG_THEO_PHAN_CONG.md</a>.</p>
+<div class="h2-row"><h2 id="b2-vong-doi-dbcontext-web-va-desktop">B2. Vòng đời DbContext: web và desktop</h2><button type="button" class="done" data-done="b2-vong-doi-dbcontext-web-va-desktop" aria-pressed="false">Đánh dấu đã học</button></div>
+<div class="scroll"><table><thead><tr>
+<th></th>
+<th>Web</th>
+<th>Desktop</th>
+</tr>
+</thead><tbody><tr>
+<td>Ai tạo scope</td>
+<td>ASP.NET Core, mỗi HTTP request</td>
+<td><code>ScopedServiceRunner</code>, mỗi thao tác</td>
+</tr>
+<tr>
+<td>DbContext sống bao lâu</td>
+<td>Một request</td>
+<td>Một lần bấm nút</td>
+</tr>
+<tr>
+<td>Tránh dữ liệu cũ?</td>
+<td>Có</td>
+<td>Có</td>
+</tr>
+<tr>
+<td>Tránh hai thao tác cùng một DbContext?</td>
+<td>Có</td>
+<td>Có</td>
+</tr>
+</tbody></table></div>
+<div class="h2-row"><h2 id="b3-hai-giao-dien-mot-database-chong-trung-van-dung">B3. Hai giao diện, một database: chống trùng vẫn đúng</h2><button type="button" class="done" data-done="b3-hai-giao-dien-mot-database-chong-trung-van-dung" aria-pressed="false">Đánh dấu đã học</button></div>
+<p>Quầy A dùng web, quầy B dùng app desktop, cùng bấm đặt khung 09:00 của một bác sĩ. Cả hai gọi cùng <code>AppointmentService.CreateAppointmentAsync</code> → cùng transaction Serializable → cùng unique index <code>UX_Appointment_ActiveDoctorStart</code>. <strong>Chỉ một người thành công</strong>, người kia nhận &quot;Khung giờ này vừa được đặt&quot;. Test <code>Toan_luong_tu_dat_lich_den_cap_thuoc_qua_ViewModel</code> tái hiện đúng cảnh hai quầy tranh một khung (hai <code>BookingViewModel</code> riêng biệt).</p>
+<div class="h2-row"><h2 id="b4-dto-la-hop-dong-giua-b-va-c-o-ca-hai-ban">B4. DTO là hợp đồng giữa B và C, ở cả hai bản</h2><button type="button" class="done" data-done="b4-dto-la-hop-dong-giua-b-va-c-o-ca-hai-ban" aria-pressed="false">Đánh dấu đã học</button></div>
+<p><code>AppointmentListItemDto</code>, <code>SlotDto</code>, <code>PatientListItemDto</code>... là <strong>cùng một hợp đồng</strong> mà web ViewModel và desktop ViewModel dùng. Khi B đổi Entity mà giữ nguyên DTO, cả hai giao diện không phải sửa.</p>
+<hr>
+</div></section><section class="part part--d"><header class="part__head" id="phan-d-ghep-a-b-c-theo-dau-nut-xac-nhan-lich-trong-app-deskt"><span class="part__letter" aria-hidden="true">∑</span><div><p class="part__note">Ghép ba phần và ôn vấn đáp</p><h1>PHẦN D — GHÉP A + B + C: THEO DẤU NÚT XÁC NHẬN LỊCH TRONG APP DESKTOP</h1></div></header><div class="part__body"><div class="scroll"><pre class="diagram">[C·View]  Tiếp tân bấm nút &quot;Xác nhận lịch&quot; (BookingView.xaml)
+            │ Command=&quot;{Binding ConfirmCommand}&quot;
+            ▼
+[C·VM]    BookingViewModel.ConfirmAsync -&gt; RunBusyAsync (IsBusy = true, thanh tiến trình chạy)
+            │ chụp lựa chọn, đổi 08:00 giờ VN -&gt; 01:00 UTC
+            │ runner.RunAsync((IAppointmentService s) =&gt; s.CreateAppointmentAsync(dto))
+            ▼
+[A]       ScopedServiceRunner: tạo scope mới -&gt; DI tạo AppointmentService + ClinicDbContext MỚI
+            │ ICurrentUserContext = UserSession (tiếp tân đang đăng nhập)
+            ▼
+[Service] PermissionGuard kiểm vai trò -&gt; kiểm giờ hợp lệ -&gt; transaction Serializable
+            │ -&gt; kiểm chồng lấn -&gt; INSERT -&gt; nhật ký -&gt; COMMIT
+            ▼
+[B]       ClinicDbContext, Entity Appointment, unique index -&gt; SQL Server
+            ▲ ServiceResult
+[A]       scope hủy, DbContext hủy
+[C·VM]    Succeeded -&gt; SuccessMessage (nêu rõ mã bé) ; thất bại -&gt; ErrorMessage
+            │ ReloadSlotsAsync -&gt; Slots cập nhật
+            ▼
+[C·View]  MessageBar hiện thông báo xanh/đỏ; khung vừa đặt chuyển &quot;Đã đặt&quot; và bị khóa</pre></div>
+<div class="h2-row"><h2 id="d2-bang-chung-21-test-chay-tren-mac">D2. Bằng chứng: 21 test, chạy trên Mac</h2><button type="button" class="done" data-done="d2-bang-chung-21-test-chay-tren-mac" aria-pressed="false">Đánh dấu đã học</button></div>
+<p class="files"><span class="files__label">Mở file</span><a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/tests/ClinicManagementSystem.Desktop.Tests/ViewModelTests.cs" title="Mở tests/ClinicManagementSystem.Desktop.Tests/ViewModelTests.cs trong VS Code">tests/ClinicManagementSystem.Desktop.Tests</a></p>
+<div class="scroll"><table><thead><tr>
+<th>Nhóm</th>
+<th>Số test</th>
+<th>Kiểm tra gì</th>
+</tr>
+</thead><tbody><tr>
+<td>Unit test ViewModel (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/tests/ClinicManagementSystem.Desktop.Tests/ViewModelTests.cs" title="Mở tests/ClinicManagementSystem.Desktop.Tests/ViewModelTests.cs trong VS Code">ViewModelTests.cs</a>)</td>
+<td>15</td>
+<td>Đặt lịch, check-in, đăng nhập, menu theo vai trò, với service giả</td>
+</tr>
+<tr>
+<td>Kiểm tra &quot;dây nối&quot; (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/tests/ClinicManagementSystem.Desktop.Tests/WiringTests.cs" title="Mở tests/ClinicManagementSystem.Desktop.Tests/WiringTests.cs trong VS Code">WiringTests.cs</a>)</td>
+<td>4</td>
+<td>DI đăng ký đủ và đúng vòng đời; mọi trang có View; <strong>mọi binding trong XAML trỏ tới thuộc tính có thật</strong>; mọi <code>StaticResource</code> đã khai báo</td>
+</tr>
+<tr>
+<td>Toàn luồng với SQL Server thật (<a class="path path--open" href="vscode://file/Users/ss/Clinic%20web/tests/ClinicManagementSystem.Desktop.Tests/EndToEndTests.cs" title="Mở tests/ClinicManagementSystem.Desktop.Tests/EndToEndTests.cs trong VS Code">EndToEndTests.cs</a>)</td>
+<td>2</td>
+<td>Tiếp tân đặt lịch (hai quầy tranh một khung) → check-in → bác sĩ khám, kê đơn → thu ngân thu tiền → dược sĩ cấp thuốc; bác sĩ mở trang đặt lịch bị tầng Services chặn</td>
+</tr>
+</tbody></table></div>
+<details class="qa"><summary><span class="tag">Thầy hỏi</span><span class="qa__q">&quot;Vì sao cần test &#39;dây nối&#39; XAML?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý trả lời</span><p>Gõ sai tên trong <code>{Binding Tenn}</code> thì trình biên dịch <strong>không báo</strong> và WPF cũng không sập, ô đó chỉ hiện <strong>trống</strong>. Test này đọc mọi file XAML và đối chiếu từng tên với thuộc tính thật của ViewModel, bắt lỗi gõ sai mà không cần mở cửa sổ.</p></div></details>
+<p><strong>Điều test không bao phủ</strong> (nói thẳng nếu thầy hỏi): giao diện chưa được mở trên Windows, nên bố cục, màu và cách hiển thị thực tế chưa được nhìn tận mắt. Logic phía sau đã được chạy thật.</p>
+<hr>
+</div></section><section class="part part--d"><header class="part__head" id="phan-e-cau-hoi-van-dap-mvvm"><span class="part__letter" aria-hidden="true">∑</span><div><p class="part__note">Ghép ba phần và ôn vấn đáp</p><h1>PHẦN E — CÂU HỎI VẤN ĐÁP MVVM</h1></div></header><div class="part__body"><p><strong>Kiến thức nền</strong></p>
+<ol>
+<li><details class="qa qa--inline"><summary><span class="qa__q">MVVM gồm những gì, mỗi phần làm gì trong app này?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Model = DTO + Service (nghiệp vụ, dữ liệu); View = XAML (hiển thị, không logic); ViewModel = trạng thái + Command của một màn hình, không biết View.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Data binding hoạt động nhờ cái gì?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> <code>DataContext</code> + <code>{Binding}</code>; ViewModel cài <code>INotifyPropertyChanged</code> để báo khi thuộc tính đổi; <code>[ObservableProperty]</code> sinh sẵn phần này.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">ICommand và CanExecute giúp gì?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Nút gọi lệnh của ViewModel thay vì gọi hàm trong code-behind; <code>CanExecute</code> false thì nút tự mờ; lệnh async tự chặn bấm hai lần.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Vì sao dùng ObservableCollection thay cho List?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Thêm/xóa phần tử thì giao diện tự cập nhật (lưới giờ, bảng thuốc).</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Source generator của CommunityToolkit.Mvvm làm gì? Vì sao cần <code>partial</code>?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Lúc biên dịch tự viết thuộc tính có báo thay đổi, lệnh RelayCommand, các móc OnXxxChanged; <code>partial</code> cho phép phần code sinh ra được ghép vào cùng lớp.</div></details></li>
+</ol>
+<p><strong>Kiến trúc (phần A)</strong></p>
+<ol start="6">
+<li><details class="qa qa--inline"><summary><span class="qa__q">Vì sao ViewModel nằm ở project <code>net10.0</code> riêng?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Không dùng được WPF nên giữ đúng kỷ luật MVVM; test chạy được trên mọi máy.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">DbContext được tạo và hủy khi nào trong app desktop?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Mỗi thao tác một scope qua <code>IServiceRunner</code>; tránh dữ liệu cũ và lỗi đa luồng; tương đương &quot;mỗi request một DbContext&quot; của web.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Captive dependency là gì? App chống nó thế nào?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Singleton giữ đối tượng Scoped (DbContext) nên nó sống mãi; chống bằng <code>IServiceRunner</code> và <code>ValidateScopes/ValidateOnBuild</code> khi khởi động.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Điều hướng giữa các trang làm thế nào?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> <code>Navigator.CurrentPage</code> + <code>ContentControl</code> + DataTemplate trong <code>ViewMappings.xaml</code>; ViewModel-first, truyền tham số bằng <code>configure</code>.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">ViewModel hỏi lại người dùng mà không gọi MessageBox bằng cách nào?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Qua <code>IDialogService</code>; WPF cài bản thật, test cài bản giả.</div></details></li>
+</ol>
+<p><strong>Nghiệp vụ (phần C)</strong></p>
+<ol start="11">
+<li><details class="qa qa--inline"><summary><span class="qa__q">Đổi bác sĩ thì lưới giờ tải lại nhờ đâu?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Móc <code>partial void OnSelectedDoctorChanged</code> do bộ sinh mã gọi, chạy <code>LoadSlotsCommand</code>.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Nút &quot;Xác nhận lịch&quot; đã mờ khi khung bận, sao Service còn kiểm tra?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Dữ liệu trên màn hình có thể cũ; quầy khác có thể vừa đặt; Service + database mới là trọng tài (3 lớp chống trùng).</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Kiểm tra ô nhập ở desktop khác web ở đâu?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Cùng <code>[Required]</code>/<code>[Range]</code>; desktop báo ngay khi gõ nhờ <code>ObservableValidator</code> + <code>INotifyDataErrorInfo</code>; vẫn <code>ValidateAllProperties()</code> trước khi lưu.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">Vì sao có lớp <code>AppointmentRow</code> mà không bind thẳng DTO?</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> Chuẩn bị chữ hiển thị (giờ VN, SĐT có dấu cách, nhãn trạng thái, <code>CanAct</code>), để XAML không có logic và test kiểm được.</div></details></li>
+</ol>
+<p><strong>Câu &quot;bẫy&quot;</strong></p>
+<ol start="15">
+<li><details class="qa qa--inline"><summary><span class="qa__q">&quot;MVVM thì code-behind phải trống hoàn toàn, LoginView sai rồi?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> <strong>Không.</strong> MVVM cấm logic nghiệp vụ trong code-behind, không cấm code hiển thị. <code>PasswordBox</code> không bind được nên code-behind chỉ chép giá trị.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">&quot;App desktop dùng lại Services thì đâu cần kiểm thử lại nghiệp vụ?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> <strong>Nửa đúng.</strong> Quy tắc nghiệp vụ đã có test riêng, nhưng <strong>cách ViewModel gọi</strong> chúng (giờ UTC, giữ lựa chọn khi lỗi, scope DbContext) vẫn phải test. Vì vậy có 21 test riêng của desktop.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">&quot;Ẩn menu Đặt lịch với bác sĩ là đủ bảo mật?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> <strong>Không.</strong> Test <code>Bac_si_goi_thang_ViewModel_dat_lich_van_bi_tang_Services_chan</code> chứng minh: kể cả mở được trang, <code>PermissionGuard</code> vẫn chặn và ViewModel hiện lỗi thay vì sập.</div></details></li>
+<li><details class="qa qa--inline"><summary><span class="qa__q">&quot;Build trên Mac thành công là app chạy được trên Windows?&quot;</span></summary><div class="qa__a"><span class="tag tag--soft">Ý chính</span> <strong>Không chắc.</strong> Build kiểm tra cú pháp C# và XAML; test kiểm logic và dây nối. Riêng giao diện thật chỉ kiểm chứng được khi mở trên Windows.</div></details></li>
+</ol>
+</div></section>
+        <p class="foot">Trang được tạo từ docs/BAI_GIANG_MVVM_DESKTOP.md. Sửa file Markdown rồi chạy lại docs/tools/md2html.js để cập nhật.</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  function load(key) { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return {}; } }
+  function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* không lưu được thì thôi */ } }
+
+  // Tô màu code
+  if (window.hljs) {
+    document.querySelectorAll('.code pre code').forEach(function (el) { window.hljs.highlightElement(el); });
+  }
+
+  // Đánh dấu đã học + tiến độ
+  var done = load('bai-giang-mvvm-desktop-done');
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-done]'));
+  function render() {
+    var count = 0;
+    buttons.forEach(function (btn) {
+      var id = btn.getAttribute('data-done');
+      var on = !!done[id];
+      if (on) count++;
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.textContent = on ? 'Đã học ✓' : 'Đánh dấu đã học';
+      var link = document.querySelector('[data-toc="' + id + '"]');
+      if (link) link.classList.toggle('is-done', on);
+    });
+    document.getElementById('doneCount').textContent = count;
+    document.getElementById('doneCountTop').textContent = count;
+    document.getElementById('progressFill').style.width = (buttons.length ? count / buttons.length * 100 : 0) + '%';
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-done');
+      if (done[id]) delete done[id]; else done[id] = true;
+      save('bai-giang-mvvm-desktop-done', done);
+      render();
+    });
+  });
+  render();
+
+  // Ô tự kiểm tra
+  var checks = load('bai-giang-mvvm-desktop-check');
+  document.querySelectorAll('[data-check]').forEach(function (box) {
+    var id = box.getAttribute('data-check');
+    if (checks[id]) box.checked = true;
+    box.addEventListener('change', function () {
+      if (box.checked) checks[id] = true; else delete checks[id];
+      save('bai-giang-mvvm-desktop-check', checks);
+    });
+  });
+
+  // "Học tiếp": nhảy tới mục đầu tiên chưa đánh dấu đã học
+  document.querySelectorAll('[data-continue]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var next = buttons.filter(function (b) { return !done[b.getAttribute('data-done')]; })[0];
+      var target = next ? document.getElementById(next.getAttribute('data-done')) : document.getElementById('bao-cao');
+      if (target) target.scrollIntoView();
+      if (typeof setDrawer === 'function') setDrawer(false);
+    });
+  });
+
+  // Mở / ẩn hết đáp án
+  function setAll(open) { document.querySelectorAll('details.qa').forEach(function (d) { d.open = open; }); }
+  document.getElementById('openAll').addEventListener('click', function () { setAll(true); });
+  document.getElementById('closeAll').addEventListener('click', function () { setAll(false); });
+
+  // Chép lệnh terminal
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('.copy');
+    if (!btn) return;
+    var code = btn.closest('.code').querySelector('code');
+    function selectText() {
+      var range = document.createRange(); range.selectNodeContents(code);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      btn.textContent = 'Đã chọn — nhấn Cmd+C';
+    }
+    try {
+      navigator.clipboard.writeText(code.textContent).then(function () { btn.textContent = 'Đã chép'; }, selectText);
+    } catch (e) { selectText(); }
+    setTimeout(function () { btn.textContent = 'Chép lệnh'; }, 2000);
+  });
+
+  // Mục lục dạng ngăn kéo trên điện thoại
+  var sidebar = document.getElementById('sidebar');
+  var toggle = document.getElementById('tocToggle');
+  function setDrawer(open) { sidebar.classList.toggle('is-open', open); toggle.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+  toggle.addEventListener('click', function () { setDrawer(!sidebar.classList.contains('is-open')); });
+  sidebar.addEventListener('click', function (event) { if (event.target.closest('a')) setDrawer(false); });
+  document.addEventListener('keydown', function (event) { if (event.key === 'Escape') setDrawer(false); });
+  document.addEventListener('click', function (event) {
+    if (sidebar.classList.contains('is-open') && !sidebar.contains(event.target) && event.target !== toggle) setDrawer(false);
+  });
+
+  // Tô sáng mục đang đọc trong mục lục
+  var links = {};
+  document.querySelectorAll('[data-toc]').forEach(function (a) { links[a.getAttribute('data-toc')] = a; });
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        Object.keys(links).forEach(function (k) { links[k].classList.remove('is-current'); });
+        var link = links[entry.target.id];
+        if (link) {
+          link.classList.add('is-current');
+          var nav = link.closest('.sidebar__nav');
+          var top = link.offsetTop - nav.offsetTop;
+          if (top < nav.scrollTop || top > nav.scrollTop + nav.clientHeight - 40) nav.scrollTop = top - nav.clientHeight / 3;
+        }
+      });
+    }, { rootMargin: '-15% 0px -75% 0px' });
+    document.querySelectorAll('.h2-row h2').forEach(function (h) { observer.observe(h); });
+  }
+})();
+</script>
+
+</html>

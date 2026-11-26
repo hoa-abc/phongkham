@@ -1,0 +1,62 @@
+<UserControl x:Class="ClinicManagementSystem.Desktop.Views.Shell.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:ClinicManagementSystem.Desktop.Controls">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <c:PageHeader>
+            <c:PageHeader.Actions>
+                <Button Content="⟳ Làm mới" Command="{Binding LoadCommand}" />
+            </c:PageHeader.Actions>
+        </c:PageHeader>
+        <c:MessageBar Grid.Row="1" />
+
+        <!-- Các ô số liệu: ItemsControl + WrapPanel = tự xuống dòng khi cửa sổ hẹp -->
+        <ItemsControl Grid.Row="2" ItemsSource="{Binding Tiles}" Margin="0,0,0,16">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Style="{StaticResource Card}" Width="230" Margin="0,0,14,14">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Label}" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{Binding Value}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource PrimaryDarkBrush}" />
+                            <TextBlock Text="{Binding Hint}" Style="{StaticResource Hint}" />
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Border Grid.Row="3" Style="{StaticResource Card}" Visibility="{Binding HasSchedule, Converter={StaticResource BoolToVis}}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Lịch hẹn hôm nay" Style="{StaticResource SectionTitle}" />
+                <DataGrid ItemsSource="{Binding TodaySchedule}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Giờ" Binding="{Binding Time}" Width="70" />
+                        <DataGridTemplateColumn Header="Bệnh nhi" Width="2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding PatientName}" Style="{StaticResource Strong}" />
+                                        <TextBlock Text="{Binding MedicalRecordNumber}" Style="{StaticResource CellSub}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Bác sĩ" Binding="{Binding DoctorName}" Width="2*" />
+                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusLabel}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,148 @@
+<!--
+  Khám & kê đơn. DataContext = ConsultationViewModel.
+  Bảng thuốc là ItemsControl bind vào ObservableCollection Lines: bấm "+ Thêm thuốc" -> ViewModel thêm một
+  PrescriptionLineViewModel -> giao diện tự thêm một dòng. Không cần JavaScript như bản web.
+-->
+<UserControl x:Class="ClinicManagementSystem.Desktop.Views.Doctor.ConsultationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:ClinicManagementSystem.Desktop.Controls"
+             x:Name="Page">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <c:PageHeader>
+                <c:PageHeader.Actions>
+                    <Button Content="← Hàng đợi" Command="{Binding BackCommand}" />
+                </c:PageHeader.Actions>
+            </c:PageHeader>
+            <c:MessageBar />
+            <ContentControl Content="{Binding Patient}" Focusable="False" />
+
+            <Border Style="{StaticResource WarnBox}" Margin="0,0,0,14" Visibility="{Binding ReadOnlyReason, Converter={StaticResource NullToCollapsed}}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Bắt đầu khám" Style="{StaticResource PrimaryButton}" Margin="12,0,0,0"
+                            Command="{Binding StartCommand}" Visibility="{Binding IsWaiting, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding ReadOnlyReason}" Foreground="{StaticResource WarnBrush}" FontWeight="SemiBold"
+                               TextWrapping="Wrap" VerticalAlignment="Center" />
+                </DockPanel>
+            </Border>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="280" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Margin="0,0,16,0" IsEnabled="{Binding CanEdit}">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Text="Thông tin khám" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="Lý do khám / triệu chứng" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding ChiefComplaint}" Height="50" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,10" />
+                            <TextBlock Text="Ghi chú lâm sàng" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding ClinicalNotes}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,10" />
+                            <TextBlock Text="Chẩn đoán (bắt buộc khi hoàn tất)" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding Diagnosis}" Margin="0,0,0,10" />
+                            <TextBlock Text="Hướng điều trị / dặn dò" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding TreatmentPlan}" Height="50" TextWrapping="Wrap" AcceptsReturn="True" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Text="Dịch vụ chỉ định (ít nhất một)" Style="{StaticResource SectionTitle}" />
+                            <ItemsControl ItemsSource="{Binding Services}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,18,6" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <Button DockPanel.Dock="Right" Content="＋ Thêm thuốc" Style="{StaticResource SmallButton}" Command="{Binding AddLineCommand}" />
+                                <TextBlock Text="Đơn thuốc" Style="{StaticResource SectionTitle}" Margin="0" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding PrescriptionStatusText}" Style="{StaticResource Hint}" Margin="0,0,0,10" />
+                            <ItemsControl ItemsSource="{Binding Lines}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="80" />
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,8,0">
+                                                <!-- Danh sách thuốc nằm ở ViewModel TRANG, nên lấy qua ElementName=Page -->
+                                                <ComboBox ItemsSource="{Binding DataContext.MedicineOptions, ElementName=Page}"
+                                                          SelectedItem="{Binding Medicine}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock>
+                                                                <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" /> <Run Text="{Binding Strength, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Text="{Binding StockInfo}" Style="{StaticResource CellSub}" Margin="2,2,0,0" />
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1" Text="{Binding Quantity, TargetNullValue=''}" Margin="0,0,8,0"
+                                                     VerticalAlignment="Top" ToolTip="Số lượng" />
+                                            <TextBox Grid.Column="2" Text="{Binding DosageInstructions}" Margin="0,0,8,0" VerticalAlignment="Top"
+                                                     ToolTip="Cách dùng, ví dụ: uống 5 ml x 2 lần/ngày sau ăn" />
+                                            <Button Grid.Column="3" Content="✕" Style="{StaticResource SmallDangerButton}" VerticalAlignment="Top"
+                                                    Command="{Binding DataContext.RemoveLineCommand, ElementName=Page}" CommandParameter="{Binding}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Border Style="{StaticResource ErrorBox}" Margin="0,6,0,0" Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Warnings}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Margin="0,0,0,4" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <CheckBox Content="Tôi đã rà soát cảnh báo dị ứng và vẫn kê đơn" IsChecked="{Binding AcknowledgeWarnings}" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Lưu nháp" Margin="0,0,8,0" Command="{Binding SaveDraftCommand}" />
+                        <Button Content="Hoàn tất khám &amp; phát hành đơn" Style="{StaticResource PrimaryButton}" Padding="18,9"
+                                Command="{Binding CompleteCommand}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <Border Grid.Column="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Các lần khám trước" Style="{StaticResource SectionTitle}" />
+                        <ItemsControl ItemsSource="{Binding PreviousVisits}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Style="{StaticResource Hint}" Margin="0,0,0,8" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

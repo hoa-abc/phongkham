@@ -1,0 +1,102 @@
+<!-- PHẦN C · Danh sách lịch hẹn. DataContext = AppointmentListViewModel. -->
+<UserControl x:Class="ClinicManagementSystem.Desktop.Views.Reception.AppointmentListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:ClinicManagementSystem.Desktop.Controls">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <c:PageHeader>
+            <c:PageHeader.Actions>
+                <Button Content="＋ Đặt lịch khám mới" Style="{StaticResource PrimaryButton}" Command="{Binding NewBookingCommand}" />
+            </c:PageHeader.Actions>
+        </c:PageHeader>
+        <c:MessageBar Grid.Row="1" />
+
+        <!-- Bộ lọc: mỗi ô bind hai chiều vào ViewModel; bấm Tìm kiếm = chạy LoadCommand -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="Tìm theo mã bệnh nhi / tên / SĐT phụ huynh" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding LoadCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                    <TextBlock Text="Ngày" Style="{StaticResource FieldLabel}" />
+                    <DatePicker SelectedDate="{Binding SelectedDate}" IsEnabled="{Binding AllDates, Converter={StaticResource InverseBool}}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                    <TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus}" DisplayMemberPath="Label" />
+                </StackPanel>
+                <CheckBox Grid.Column="3" Content="Mọi ngày" IsChecked="{Binding AllDates}" VerticalAlignment="Bottom" Margin="0,0,12,8" />
+                <Button Grid.Column="4" Content="⌕ Tìm kiếm" Style="{StaticResource PrimaryButton}" VerticalAlignment="Bottom"
+                        Command="{Binding LoadCommand}" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource Card}" Padding="0">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding ResultSummary}" Style="{StaticResource Hint}" Margin="16,12" />
+                <DataGrid ItemsSource="{Binding Items}" BorderThickness="0,1,0,0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Giờ" Binding="{Binding Time}" Width="64" FontWeight="SemiBold" />
+                        <DataGridTemplateColumn Header="Thông tin bệnh nhi" Width="3*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding PatientName}" Style="{StaticResource Strong}" />
+                                        <TextBlock Style="{StaticResource CellSub}">
+                                            <Run Text="{Binding MedicalRecordNumber, Mode=OneWay}" /> · <Run Text="{Binding GuardianLine, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Bác sĩ &amp; chuyên khoa" Width="2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DoctorName}" Foreground="{StaticResource TextBrush}" />
+                                        <TextBlock Text="{Binding DoctorSpecialty}" Style="{StaticResource CellSub}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Ngày" Binding="{Binding Date}" Width="96" />
+                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusLabel}" Width="110" />
+                        <DataGridTemplateColumn Header="Thao tác" Width="190">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <!-- Nút trong từng dòng gọi lệnh của ViewModel TRANG (lấy qua DataGrid), truyền chính dòng đó làm tham số -->
+                                    <StackPanel Orientation="Horizontal" Visibility="{Binding CanAct, Converter={StaticResource BoolToVis}}">
+                                        <Button Content="Check-in" Style="{StaticResource SmallPrimaryButton}" Margin="0,0,6,0"
+                                                Command="{Binding DataContext.CheckInCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Hủy lịch" Style="{StaticResource SmallDangerButton}"
+                                                Command="{Binding DataContext.CancelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

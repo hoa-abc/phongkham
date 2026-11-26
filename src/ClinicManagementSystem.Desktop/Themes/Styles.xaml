@@ -1,0 +1,295 @@
+<!--
+  Styles.xaml: "CSS" của app WPF. Màu khai báo MỘT lần (giống design token bên web), mọi màn hình dùng lại.
+  Màu lấy theo bản web/Figma: xanh chủ đạo #4F7DFF, đỏ dị ứng, cam cảnh báo.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:ClinicManagementSystem.Desktop"
+                    xmlns:infra="clr-namespace:ClinicManagementSystem.Desktop.ViewModels.Infrastructure;assembly=ClinicManagementSystem.Desktop.ViewModels">
+
+    <!-- ===== Màu ===== -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#4F7DFF" />
+    <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#2E3B7A" />
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#EAF0FF" />
+    <SolidColorBrush x:Key="BgBrush" Color="#F4F6FC" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="TextBrush" Color="#29366F" />
+    <SolidColorBrush x:Key="Text2Brush" Color="#58678F" />
+    <SolidColorBrush x:Key="MutedBrush" Color="#7F8DB5" />
+    <SolidColorBrush x:Key="LineBrush" Color="#DCE4F2" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#B91C1C" />
+    <SolidColorBrush x:Key="DangerBgBrush" Color="#FEF2F2" />
+    <SolidColorBrush x:Key="WarnBrush" Color="#C2410C" />
+    <SolidColorBrush x:Key="WarnBgBrush" Color="#FFF7ED" />
+    <SolidColorBrush x:Key="OkBrush" Color="#15803D" />
+    <SolidColorBrush x:Key="OkBgBrush" Color="#DCFCE7" />
+
+    <!-- ===== Bộ chuyển đổi ===== -->
+    <local:BoolToVisibilityConverter x:Key="BoolToVis" />
+    <local:BoolToVisibilityConverter x:Key="BoolToVisInverse" Invert="True" />
+    <local:NullToCollapsedConverter x:Key="NullToCollapsed" />
+    <local:InverseBoolConverter x:Key="InverseBool" />
+
+    <!-- ===== Chữ ===== -->
+    <Style TargetType="TextBlock" x:Key="PageTitle">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="PageSubtitle">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource Text2Brush}" />
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="SectionTitle">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="FieldLabel">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource Text2Brush}" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="Hint">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="Strong">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="CellSub">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+
+    <!-- ===== Khung thẻ và ô thông báo ===== -->
+    <Style TargetType="Border" x:Key="Card">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="18" />
+    </Style>
+    <Style TargetType="Border" x:Key="ErrorBox">
+        <Setter Property="Background" Value="{StaticResource DangerBgBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,8" />
+    </Style>
+    <Style TargetType="Border" x:Key="SuccessBox" BasedOn="{StaticResource ErrorBox}">
+        <Setter Property="Background" Value="{StaticResource OkBgBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource OkBrush}" />
+    </Style>
+    <Style TargetType="Border" x:Key="WarnBox" BasedOn="{StaticResource ErrorBox}">
+        <Setter Property="Background" Value="{StaticResource WarnBgBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource WarnBrush}" />
+    </Style>
+
+    <!-- ===== Nút ===== -->
+    <Style TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="14,7" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.88" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource PrimaryDarkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="Button" x:Key="PrimaryButton" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style TargetType="Button" x:Key="DangerButton" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="{StaticResource DangerBgBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+    </Style>
+    <Style TargetType="Button" x:Key="SmallButton" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style TargetType="Button" x:Key="SmallPrimaryButton" BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style TargetType="Button" x:Key="SmallDangerButton" BasedOn="{StaticResource DangerButton}">
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- ===== Ô nhập: viền đỏ + dòng chữ lỗi bên dưới khi ViewModel báo lỗi (INotifyDataErrorInfo) ===== -->
+    <ControlTemplate x:Key="FieldErrorTemplate">
+        <StackPanel>
+            <Border BorderBrush="{StaticResource DangerBrush}" BorderThickness="1.5" CornerRadius="6">
+                <AdornedElementPlaceholder x:Name="Adorned" />
+            </Border>
+            <TextBlock Text="{Binding ElementName=Adorned, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"
+                       Foreground="{StaticResource DangerBrush}" FontSize="11.5" Margin="2,2,0,0" />
+        </StackPanel>
+    </ControlTemplate>
+    <Style TargetType="TextBox">
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{StaticResource FieldErrorTemplate}" />
+    </Style>
+    <Style TargetType="PasswordBox">
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    </Style>
+    <Style TargetType="ComboBox">
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="MinHeight" Value="32" />
+    </Style>
+    <Style TargetType="DatePicker">
+        <Setter Property="Padding" Value="6,5" />
+        <Setter Property="Validation.ErrorTemplate" Value="{StaticResource FieldErrorTemplate}" />
+    </Style>
+    <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- ===== Bảng ===== -->
+    <Style TargetType="DataGrid">
+        <Setter Property="AutoGenerateColumns" Value="False" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="CanUserAddRows" Value="False" />
+        <Setter Property="HeadersVisibility" Value="Column" />
+        <Setter Property="GridLinesVisibility" Value="Horizontal" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="RowBackground" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="SelectionMode" Value="Single" />
+        <Setter Property="RowHeight" Value="52" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+    <Style TargetType="DataGridCell">
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ===== Danh sách chọn (ListBox) dạng thẻ ===== -->
+    <Style TargetType="ListBox" x:Key="CardList">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    </Style>
+    <Style TargetType="ListBoxItem" x:Key="CardListItem">
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Root" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                            <Setter TargetName="Root" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource BgBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Dải nhận diện bệnh nhi: tự hiện ở mọi chỗ có ContentControl Content="{Binding Patient}" ===== -->
+    <DataTemplate DataType="{x:Type infra:PatientBanner}">
+        <Border Style="{StaticResource Card}" Margin="0,0,0,14" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="3*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding FullName}" FontSize="16" Style="{StaticResource Strong}" />
+                    <TextBlock Text="{Binding MedicalRecordNumber}" Style="{StaticResource CellSub}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="12,0">
+                    <TextBlock Text="TUỔI · GIỚI" Style="{StaticResource CellSub}" />
+                    <TextBlock Text="{Binding AgeAndGender}" TextWrapping="Wrap" Foreground="{StaticResource TextBrush}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="12,0">
+                    <TextBlock Text="NGƯỜI GIÁM HỘ" Style="{StaticResource CellSub}" />
+                    <TextBlock Text="{Binding Guardian}" TextWrapping="Wrap" Foreground="{StaticResource TextBrush}" />
+                    <TextBlock Text="{Binding Vitals}" Style="{StaticResource CellSub}" TextWrapping="Wrap" />
+                </StackPanel>
+                <Border Grid.Column="3" Style="{StaticResource ErrorBox}" VerticalAlignment="Center"
+                        Visibility="{Binding HasAllergies, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding Allergies, StringFormat='⚠ {0}'}" Foreground="{StaticResource DangerBrush}"
+                               FontWeight="SemiBold" TextWrapping="Wrap" />
+                </Border>
+                <TextBlock Grid.Column="3" Text="{Binding Allergies}" Style="{StaticResource Hint}" VerticalAlignment="Center"
+                           Visibility="{Binding HasAllergies, Converter={StaticResource BoolToVisInverse}}" />
+            </Grid>
+        </Border>
+    </DataTemplate>
+</ResourceDictionary>

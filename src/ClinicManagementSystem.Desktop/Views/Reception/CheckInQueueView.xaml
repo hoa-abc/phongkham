@@ -1,0 +1,60 @@
+<!-- PHẦN C · Hàng chờ check-in hôm nay. DataContext = CheckInQueueViewModel. -->
+<UserControl x:Class="ClinicManagementSystem.Desktop.Views.Reception.CheckInQueueView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:ClinicManagementSystem.Desktop.Controls">
+    <DockPanel>
+        <c:PageHeader DockPanel.Dock="Top">
+            <c:PageHeader.Actions>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="⟳ Làm mới" Margin="0,0,8,0" Command="{Binding LoadCommand}" />
+                    <Button Content="＋ Đặt lịch khám" Style="{StaticResource PrimaryButton}" Command="{Binding NewBookingCommand}" />
+                </StackPanel>
+            </c:PageHeader.Actions>
+        </c:PageHeader>
+        <c:MessageBar DockPanel.Dock="Top" />
+        <Border Style="{StaticResource Card}" Padding="0">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Margin="16,12" Style="{StaticResource Hint}"
+                           Text="Kiểm tra mã hồ sơ, người giám hộ và bác sĩ trước khi ghi sinh hiệu." />
+                <TextBlock DockPanel.Dock="Top" Margin="16,0,16,12" Text="Không còn lịch hẹn nào chờ check-in hôm nay."
+                           Style="{StaticResource Strong}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}" />
+                <DataGrid ItemsSource="{Binding Items}" BorderThickness="0,1,0,0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Giờ" Binding="{Binding Time}" Width="64" FontWeight="SemiBold" />
+                        <DataGridTemplateColumn Header="Thông tin bệnh nhi" Width="2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding PatientName}" Style="{StaticResource Strong}" />
+                                        <TextBlock Text="{Binding MedicalRecordNumber}" Style="{StaticResource CellSub}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Người giám hộ" Binding="{Binding GuardianLine}" Width="2*" />
+                        <DataGridTemplateColumn Header="Bác sĩ / phòng" Width="2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DoctorName}" Foreground="{StaticResource TextBrush}" />
+                                        <TextBlock Text="{Binding DoctorSpecialty}" Style="{StaticResource CellSub}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Thao tác" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Ghi sinh hiệu →" Style="{StaticResource SmallPrimaryButton}" HorizontalAlignment="Left"
+                                            Command="{Binding DataContext.OpenCheckInCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+    </DockPanel>
+</UserControl>

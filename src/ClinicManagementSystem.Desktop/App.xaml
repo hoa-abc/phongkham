@@ -1,0 +1,16 @@
+﻿<!--
+  App.xaml: tài nguyên dùng chung cho TOÀN ứng dụng (màu, style, mẫu hiển thị).
+  Không có StartupUri: cửa sổ chính được tạo trong App.xaml.cs qua DI (để nó nhận được ShellViewModel).
+-->
+<Application x:Class="ClinicManagementSystem.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Styles.xaml" />
+                <ResourceDictionary Source="Themes/ViewMappings.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

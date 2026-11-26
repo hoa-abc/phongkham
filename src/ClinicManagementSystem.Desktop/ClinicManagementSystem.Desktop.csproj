@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tầng View của app desktop (chữ "V" trong MVVM): cửa sổ, XAML, style. Chỉ chạy trên Windows.
+    EnableWindowsTargeting cho phép BUILD project này trên Mac/Linux (để kiểm tra lỗi biên dịch),
+    nhưng muốn CHẠY thì phải dùng máy Windows.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <RootNamespace>ClinicManagementSystem.Desktop</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClinicManagementSystem.Common\ClinicManagementSystem.Common.csproj" />
+    <ProjectReference Include="..\ClinicManagementSystem.DataAccess\ClinicManagementSystem.DataAccess.csproj" />
+    <ProjectReference Include="..\ClinicManagementSystem.Services\ClinicManagementSystem.Services.csproj" />
+    <ProjectReference Include="..\ClinicManagementSystem.Desktop.ViewModels\ClinicManagementSystem.Desktop.ViewModels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Cấu hình chung đi kèm app; file .Local.json chứa mật khẩu nằm ngoài Git. -->
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.Local.json')" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,64 @@
+<!-- PHẦN C · Tra cứu hồ sơ bệnh nhi. DataContext = PatientListViewModel. -->
+<UserControl x:Class="ClinicManagementSystem.Desktop.Views.Reception.PatientListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:ClinicManagementSystem.Desktop.Controls">
+    <DockPanel>
+        <c:PageHeader DockPanel.Dock="Top">
+            <c:PageHeader.Actions>
+                <Button Content="＋ Tạo hồ sơ mới" Style="{StaticResource PrimaryButton}" Command="{Binding NewPatientCommand}"
+                        Visibility="{Binding CanManage, Converter={StaticResource BoolToVis}}" />
+            </c:PageHeader.Actions>
+        </c:PageHeader>
+        <c:MessageBar DockPanel.Dock="Top" />
+        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="⌕ Tìm kiếm" Style="{StaticResource PrimaryButton}" Margin="10,0,0,0"
+                        Command="{Binding LoadCommand}" />
+                <TextBox Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding LoadCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+            </DockPanel>
+        </Border>
+        <Border Style="{StaticResource Card}" Padding="0">
+            <DataGrid ItemsSource="{Binding Items}" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Mã bệnh nhi" Binding="{Binding MedicalRecordNumber}" Width="110" FontWeight="SemiBold" />
+                    <DataGridTextColumn Header="Họ tên bé" Binding="{Binding FullName}" Width="2*" />
+                    <DataGridTextColumn Header="Tuổi" Binding="{Binding Age}" Width="110" />
+                    <DataGridTextColumn Header="Phụ huynh" Binding="{Binding GuardianLine}" Width="2*" />
+                    <DataGridTemplateColumn Header="Dị ứng" Width="2*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding AllergyText}" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CellSub}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasAllergies}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Thao tác" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Đặt lịch" Style="{StaticResource SmallButton}" HorizontalAlignment="Left"
+                                        Visibility="{Binding DataContext.CanManage, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding DataContext.BookForCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </DockPanel>
+</UserControl>

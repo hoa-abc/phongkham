@@ -1,0 +1,22 @@
+<!--
+  Thanh thông báo dùng chung cho mọi trang: thanh "đang xử lý", thông báo xanh (thành công), đỏ (lỗi).
+  Nó KHÔNG đặt DataContext riêng -> tự dùng ViewModel của trang chứa nó (mọi trang đều kế thừa ViewModelBase).
+-->
+<UserControl x:Class="ClinicManagementSystem.Desktop.Controls.MessageBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <ProgressBar IsIndeterminate="True" Height="3" Margin="0,0,0,8" Foreground="{StaticResource PrimaryBrush}"
+                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+        <Border Style="{StaticResource SuccessBox}" Margin="0,0,0,12"
+                Visibility="{Binding HasSuccess, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding SuccessMessage, StringFormat='✓ {0}'}" Foreground="{StaticResource OkBrush}"
+                       TextWrapping="Wrap" FontWeight="SemiBold" />
+        </Border>
+        <Border Style="{StaticResource ErrorBox}" Margin="0,0,0,12"
+                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding ErrorMessage, StringFormat='⚠ {0}'}" Foreground="{StaticResource DangerBrush}"
+                       TextWrapping="Wrap" FontWeight="SemiBold" />
+        </Border>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,19 @@
+# SQL Server riêng cho đồ án phòng khám (chỉ phục vụ học tập trên máy cá nhân).
+# Chạy:   docker compose up -d      Dừng: docker compose down      Xóa sạch dữ liệu: docker compose down -v
+services:
+  clinic-db:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: clinic-web-sqlserver
+    platform: linux/amd64            # Ảnh SQL Server chỉ có bản amd64; máy Mac chip Apple chạy qua giả lập.
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"   # đọc từ file .env (không đưa lên Git)
+      MSSQL_PID: "Developer"
+    ports:
+      - "127.0.0.1:14333:1433"       # cổng máy thật 14333 -> cổng 1433 trong container; chỉ mở cho chính máy này
+    volumes:
+      - clinic-web-sqlserver-data:/var/opt/mssql
+    restart: unless-stopped
+
+volumes:
+  clinic-web-sqlserver-data:
